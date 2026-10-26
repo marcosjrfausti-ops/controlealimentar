@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fine Tuning</title>
+    <style>
+        :root {
+            --bg-color: #0d0d0d;
+            --card-bg: #1c1c1e;
+            --icon-bg: #2c2927;
+            --text-main: #f5f5f5;
+            --text-sec: #9e9e9e;
+            --accent: #bb86fc;
+            --carb-color: #a275ff; /* Roxo */
+            --fat-color: #ff5252; /* Vermelho/Rosa */
+            --prot-color: #ffca28; /* Amarelo */
+            --border-color: #333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: inherit;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* TELA 0: HOME */
+        #home-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #121212 0%, #1c1c1e 100%);
+        }
+
+        #home-screen h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 2rem;
+            letter-spacing: 2px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: #000;
+            padding: 1rem 3rem;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+
+        /* TELA 1: DASHBOARD */
+        #dashboard-screen {
+            padding: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (min-width: 768px) {
+            #dashboard-screen {
+                grid-template-columns: 1fr 1fr;
+                padding: 2rem;
+            }
+        }
+
+        /* HEADER */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1rem;
+        }
+        
+        .app-header h2 {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .icon-btn {
+            font-size: 1.2rem;
+            color: var(--text-sec);
+            padding: 0.5rem;
+        }
+
+        /* CARD DE INFORMAÇÕES NUTRICIONAIS */
+        .nutri-card {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+        }
+
+        .nutri-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-sec);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .calories-display {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .calories-display h3 {
+            font-size: 3rem;
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+        }
+
+        .calories-display p {
+            color: var(--text-sec);
+            font-size: 0.85rem;
+        }
+
+        .macros-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .macro-item h4 {
+            font-size: 0.85rem;
+            color: var(--text-sec);
+            font-weight: normal;
+            margin-bottom: 0.2rem;
+        }
+
+        .macro-item p {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .macro-item span {
+            font-size: 0.75rem;
+            color: var(--text-sec);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .macro-bar-bg {
+            height: 4px;
+            background-color: #333;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .macro-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+        }
+
+        .target-percentage {
+            font-size: 0.75rem;
+            color: var(--text-sec);
+        }
+
+        /* LISTA DE REFEIÇÕES */
+        .meals-card {
+            background-color: var(--bg-color);
+        }
+
+        .meals-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .meals-header h2 {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .meal-item {
+            display: flex;
+            align-items: center;
+            padding: 1.2rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .meal-item:last-child {
+            border-bottom: none;
+        }
+
+        .meal-icon {
+            width: 50px;
+            height: 50px;
+            background-color: var(--icon-bg);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+
+        .meal-content {
+            flex-grow: 1;
+            padding-right: 1rem;
+        }
+
+        .meal-title {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 0.2rem;
+        }
+
+        .meal-desc {
+            font-size: 0.75rem;
+            color: var(--text-sec);
+            margin-bottom: 0.4rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.3;
+        }
+
+        .meal-kcal {
+            font-size: 0.8rem;
+            color: var(--text-sec);
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .meal-kcal::before {
+            content: "🔥";
+            font-size: 0.7rem;
+            margin-right: 4px;
+            filter: grayscale(1);
+        }
+
+        .meal-macros-bar {
+            display: flex;
+            height: 4px;
+            border-radius: 2px;
+            overflow: hidden;
+            background-color: #333;
+            margin-bottom: 0.3rem;
+            width: 80%;
+        }
+
+        .meal-macros-text {
+            font-size: 0.65rem;
+            color: var(--text-sec);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .meal-macros-text span {
+            display: flex;
+            align-items: center;
+        }
+
+        .meal-macros-text span::before {
+            content: "";
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+
+        .dot-carb::before { background-color: var(--carb-color); }
+        .dot-fat::before { background-color: var(--fat-color); }
+        .dot-prot::before { background-color: var(--prot-color); }
+
+        .add-btn {
+            width: 30px;
+            height: 30px;
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Tela Inicial -->
+    <div id="home-screen">
+        <h1>Fine Tuning</h1>
+        <button class="btn-primary" onclick="goToDiet()">Dieta</button>
+    </div>
+
+    <!-- Tela Dashboard / Dieta -->
+    <div id="dashboard-screen" class="hidden">
+        
+        <!-- Coluna Esquerda: Refeições -->
+        <div class="meals-card">
+            <div class="app-header">
+                <button class="icon-btn" onclick="goToHome()">&#10094;</button>
+                <h2>Registrar refeição</h2>
+                <div>
+                    <button class="icon-btn">📊</button>
+                    <button class="icon-btn">&#8942;</button>
+                </div>
+            </div>
+
+            <div class="meal-item">
+                <div class="meal-icon">🌅</div>
+                <div class="meal-content">
+                    <div class="meal-title">Café da manhã</div>
+                    <div class="meal-desc">Ovo Mexido</div>
+                    <div class="meal-kcal">398 kcal</div>
+                    <div class="meal-macros-bar">
+                        <div style="width: 4%; background-color: var(--carb-color);"></div>
+                        <div style="width: 70%; background-color: var(--fat-color);"></div>
+                        <div style="width: 26%; background-color: var(--prot-color);"></div>
+                    </div>
+                    <div class="meal-macros-text">
+                        <span class="dot-carb">4%</span>
+                        <span class="dot-fat">70%</span>
+                        <span class="dot-prot">26%</span>
+                    </div>
+                </div>
+                <button class="add-btn">+</button>
+            </div>
+
+            <div class="meal-item">
+                <div class="meal-icon">☀️</div>
+                <div class="meal-content">
+                    <div class="meal-title">Almoço</div>
+                    <div class="meal-desc">Albumina(Naturovos), Creatina(Soldiers Nutrition), Suco de Pêssego(Tial), Batavo Pense Zero, Coxinha de Frango</div>
+                    <div class="meal-kcal">1.091 kcal</div>
+                    <div class="meal-macros-bar">
+                        <div style="width: 50%; background-color: var(--carb-color);"></div>
+                        <div style="width: 29%; background-color: var(--fat-color);"></div>
+                        <div style="width: 21%; background-color: var(--prot-color);"></div>
+                    </div>
+                    <div class="meal-macros-text">
+                        <span class="dot-carb">50%</span>
+                        <span class="dot-fat">29%</span>
+                        <span class="dot-prot">21%</span>
+                    </div>
+                </div>
+                <button class="add-btn">+</button>
+            </div>
+
+            <div class="meal-item">
+                <div class="meal-icon">🌙</div>
+                <div class="meal-content">
+                    <div class="meal-title">Jantar</div>
+                    <div class="meal-desc">Arroz BH Premium, Sardinhas com Óleo-Gomes da Costa, Pepino Japonês</div>
+                    <div class="meal-kcal">235 kcal</div>
+                    <div class="meal-macros-bar">
+                        <div style="width: 42%; background-color: var(--carb-color);"></div>
+                        <div style="width: 32%; background-color: var(--fat-color);"></div>
+                        <div style="width: 26%; background-color: var(--prot-color);"></div>
+                    </div>
+                    <div class="meal-macros-text">
+                        <span class="dot-carb">42%</span>
+                        <span class="dot-fat">32%</span>
+                        <span class="dot-prot">26%</span>
+                    </div>
+                </div>
+                <button class="add-btn">+</button>
+            </div>
+
+            <div class="meal-item">
+                <div class="meal-icon">⛅</div>
+                <div class="meal-content">
+                    <div class="meal-title">Lanche da manhã</div>
+                </div>
+                <button class="add-btn">+</button>
+            </div>
+
+            <div class="meal-item">
+                <div class="meal-icon">🌤️</div>
+                <div class="meal-content">
+                    <div class="meal-title">Lanche da tarde</div>
+                    <div class="meal-desc">Guarapan(Coca-Cola), Salsicha(Sadia), Pão Doce</div>
+                    <div class="meal-kcal">788 kcal</div>
+                    <div class="meal-macros-bar">
+                        <div style="width: 51%; background-color: var(--carb-color);"></div>
+                        <div style="width: 39%; background-color: var(--fat-color);"></div>
+                        <div style="width: 10%; background-color: var(--prot-color);"></div>
+                    </div>
+                    <div class="meal-macros-text">
+                        <span class="dot-carb">51%</span>
+                        <span class="dot-fat">39%</span>
+                        <span class="dot-prot">10%</span>
+                    </div>
+                </div>
+                <button class="add-btn">+</button>
+            </div>
+
+            <div class="meal-item">
+                <div class="meal-icon">🌒</div>
+                <div class="meal-content">
+                    <div class="meal-title">Lanche da noite</div>
+                    <div class="meal-desc">Mamão Papaia</div>
+                    <div class="meal-kcal">161 kcal</div>
+                    <div class="meal-macros-bar">
+                        <div style="width: 95%; background-color: var(--carb-color);"></div>
+                        <div style="width: 2%; background-color: var(--fat-color);"></div>
+                        <div style="width: 3%; background-color: var(--prot-color);"></div>
+                    </div>
+                    <div class="meal-macros-text">
+                        <span class="dot-carb">95%</span>
+                        <span class="dot-fat">2%</span>
+                        <span class="dot-prot">3%</span>
+                    </div>
+                </div>
+                <button class="add-btn">+</button>
+            </div>
+        </div>
+
+        <!-- Coluna Direita: Info Nutricional (Ainda na tela um) -->
+        <div class="nutri-card">
+            <div class="nutri-header">
+                <button class="icon-btn">&#10094; Refeição</button>
+                <span>&#10094; sáb., 24 de out. &#10095;</span>
+            </div>
+
+            <div class="calories-display">
+                <h3>2.673 <span style="font-size: 1.2rem; font-weight: normal;">kcal</span></h3>
+                <p>2.340-2.860 &nbsp; (Máx 3.380)</p>
+            </div>
+
+            <div class="macros-container">
+                <div class="macro-item">
+                    <h4>Carboidr</h4>
+                    <p>312,1g</p>
+                    <span>/ 358 g</span>
+                    <div class="macro-bar-bg">
+                        <div class="macro-bar-fill" style="width: 87%; background-color: var(--carb-color);"></div>
+                    </div>
+                    <div class="target-percentage">Real 46% (55%)</div>
+                </div>
+
+                <div class="macro-item">
+                    <h4>Gord.</h4>
+                    <p>111,1g</p>
+                    <span>/ 72 g</span>
+                    <div class="macro-bar-bg">
+                        <div class="macro-bar-fill" style="width: 100%; background-color: var(--fat-color);"></div>
+                    </div>
+                    <div class="target-percentage">Real 36% (25%)</div>
+                </div>
+
+                <div class="macro-item">
+                    <h4>Proteína</h4>
+                    <p>123,2g</p>
+                    <span>/ 150 g</span>
+                    <div class="macro-bar-bg">
+                        <div class="macro-bar-fill" style="width: 82%; background-color: var(--prot-color);"></div>
+                    </div>
+                    <div class="target-percentage">Real 18% (20%)</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function goToDiet() {
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('dashboard-screen').classList.remove('hidden');
+        }
+
+        function goToHome() {
+            document.getElementById('dashboard-screen').classList.add('hidden');
+            document.getElementById('home-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
