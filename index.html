@@ -26,16 +26,25 @@
   .home-btn:hover { transform: scale(1.05); }
 
   /* Geral */
-  .header { display: flex; align-items: center; margin-bottom: 1.5rem; gap: 1rem; }
-  .header h2 { font-size: 1.2rem; font-weight: 500; flex-grow: 1; }
-  .icon-btn { background: none; border: none; color: var(--text-sec); font-size: 1.5rem; cursor: pointer; padding: .5rem; }
+  .header { display: flex; align-items: center; margin-bottom: 1.5rem; justify-content: space-between; gap: 0.5rem; }
+  .header h2 { font-size: 1.1rem; font-weight: 500; white-space: nowrap; }
+  .icon-btn { background: none; border: none; color: var(--text-sec); font-size: 1.5rem; cursor: pointer; padding: .5rem; display: flex; align-items: center; justify-content: center; }
+  .icon-btn:hover { color: var(--text-main); }
   .erro { background: #3b1111; color: #ff8a8a; border-radius: 10px; padding: .8rem 1rem; margin-bottom: 1rem; font-size: .85rem; }
   .vazio { color: var(--text-sec); text-align: center; margin-top: 2rem; }
   .sub { font-size: 1rem; font-weight: 500; margin-bottom: 1rem; }
   .preview { font-size: .8rem; color: var(--text-sec); margin-top: .5rem; }
 
+  /* Controle de Data e Menu */
+  .date-selector { display: flex; align-items: center; justify-content: center; gap: 0.2rem; }
+  .date-text { font-size: 1.1rem; font-weight: 600; color: var(--accent); min-width: 80px; text-align: center; }
+  .dropdown-menu { position: absolute; right: 0; top: 3rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.5); min-width: 180px; }
+  .dropdown-menu button { background: none; border: none; color: var(--text-main); padding: 1rem; text-align: left; font-size: 0.95rem; cursor: pointer; border-bottom: 1px solid var(--border-color); }
+  .dropdown-menu button:last-child { border-bottom: none; }
+  .dropdown-menu button:hover { background: rgba(255,255,255,0.05); }
+
   /* Refeições */
-  .meal-card { display: flex; align-items: center; padding: 1.2rem 0; border-bottom: 1px solid var(--border-color); cursor: pointer; }
+  .meal-card { display: flex; align-items: center; padding: 1.2rem 0; border-bottom: 1px solid var(--border-color); cursor: pointer; position: relative; }
   .meal-card:hover { background: rgba(255,255,255,.02); }
   .meal-icon { width: 50px; height: 50px; background: var(--icon-bg); border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; margin-right: 1rem; flex-shrink: 0; }
   .meal-content { flex-grow: 1; padding-right: 1rem; }
@@ -49,8 +58,11 @@
   .dot-carb::before { background: var(--carb-color); }
   .dot-fat::before { background: var(--fat-color); }
   .dot-prot::before { background: var(--prot-color); }
+  
   .add-btn { background: none; border: none; color: var(--text-main); font-size: 1.8rem; font-weight: 300; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
   .add-btn:hover { background: var(--icon-bg); }
+  .del-btn { background: rgba(255, 82, 82, 0.1); border: none; color: #ff5252; font-size: 1rem; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .del-btn:hover { background: rgba(255, 82, 82, 0.2); }
 
   /* Detalhes */
   .macro-summary { background: var(--card-bg); border-radius: 20px; padding: 1.5rem; margin-bottom: 1.5rem; }
@@ -95,8 +107,24 @@
 
   <section id="dashboard-screen" class="screen">
     <div class="header">
-      <button class="icon-btn" data-go="home">&#10094;</button>
-      <h2>Registrar refeição</h2>
+      <div style="display:flex; align-items:center; flex:1;">
+        <button class="icon-btn" data-go="home">&#10094;</button>
+        <h2 style="display: none;">Registrar refeição</h2>
+      </div>
+      
+      <div class="date-selector" style="flex:1;">
+        <button id="prev-date" class="icon-btn">&lt;</button>
+        <span id="current-date-display" class="date-text">Hoje</span>
+        <button id="next-date" class="icon-btn">&gt;</button>
+      </div>
+
+      <div style="position:relative; display:flex; justify-content:flex-end; flex:1;">
+        <button class="icon-btn" id="menu-btn" style="font-size: 1.8rem; transform: translateY(-5px);">&#8942;</button>
+        <div id="meal-menu" class="dropdown-menu" hidden>
+          <button id="btn-add-meal">Adicionar refeição</button>
+          <button id="btn-toggle-delete">Excluir refeição</button>
+        </div>
+      </div>
     </div>
     <div id="erro" class="erro" hidden></div>
     <div id="meals-container"></div>
@@ -198,7 +226,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
   // Configuração do projeto Firebase (CONTROLE-ALIMENTAR)
   const firebaseConfig = {
@@ -212,13 +240,14 @@
   };
   const db = getFirestore(initializeApp(firebaseConfig));
 
-  // Estrutura fixa
-  const REFEICOES = [
-    { id: "cafe-da-manha", titulo: "Café da manhã", icone: "🌅" },
-    { id: "almoco", titulo: "Almoço", icone: "☀️" },
-    { id: "jantar", titulo: "Jantar", icone: "🌙" },
-    { id: "lanches", titulo: "Lanches", icone: "🌤️" }
+  // Estruturas Padrão
+  const DEFAULT_REFEICOES = [
+    { id: "cafe-da-manha", titulo: "Café da manhã", icone: "🌅", ordem: 1 },
+    { id: "almoco", titulo: "Almoço", icone: "☀️", ordem: 2 },
+    { id: "jantar", titulo: "Jantar", icone: "🌙", ordem: 3 },
+    { id: "lanches", titulo: "Lanches", icone: "🌤️", ordem: 4 }
   ];
+
   const MACROS = [
     ["carb", "Carboidratos totais", "g"], ["acucTot", "Açúcares totais", "g"], ["acucAdd", "Açúcares adicionados", "g"],
     ["prot", "Proteínas", "g"], ["fat", "Gorduras totais", "g"], ["fatSat", "Gorduras saturadas", "g"],
@@ -227,8 +256,12 @@
   const VITAMINAS = ["Vitamina A", "Vitamina B2 (Riboflavina)", "Vitamina B5 (Ácido Pantotênico)", "Vitamina B9 (Ácido Fólico)", "Vitamina B12 (Cobalamina)", "Vitamina C", "Vitamina D", "Vitamina E"];
   const MINERAIS = [["Cálcio", "mg"], ["Ferro", "mg"], ["Zinco", "mg"], ["Fósforo", "mg"], ["Selênio", "mcg"], ["Potássio", "mg"]];
 
-  const estado = { alimentos: [], itens: {} };
+  // Gerenciamento de Estado
+  const estado = { alimentos: [], refeicoes: [], itens: {} };
+  const listenersItens = {};
   let refeicaoAtual = null;
+  let dataAtual = new Date();
+  let deleteMode = false;
 
   // Utilitários
   const $ = sel => document.querySelector(sel);
@@ -245,6 +278,35 @@
     if (!total) return { carb: 0, fat: 0, prot: 0 };
     return { carb: t.carb / total * 100, fat: t.fat / total * 100, prot: t.prot / total * 100 };
   };
+  
+  // Datas
+  const obterDataString = data => {
+    const tzOffset = data.getTimezoneOffset() * 60000;
+    return (new Date(data.getTime() - tzOffset)).toISOString().slice(0, 10);
+  };
+  
+  const formatarDataUI = data => {
+    const hoje = new Date();
+    const strHoje = obterDataString(hoje);
+    const strData = obterDataString(data);
+    
+    if (strData === strHoje) return "Hoje";
+    
+    const ontem = new Date(); ontem.setDate(hoje.getDate() - 1);
+    if (strData === obterDataString(ontem)) return "Ontem";
+    
+    const amanha = new Date(); amanha.setDate(hoje.getDate() + 1);
+    if (strData === obterDataString(amanha)) return "Amanhã";
+    
+    return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  };
+
+  const mudarData = dias => {
+    dataAtual.setDate(dataAtual.getDate() + dias);
+    $("#current-date-display").textContent = formatarDataUI(dataAtual);
+    renderDashboard();
+  };
+
   const TELAS = { home: "home-screen", dashboard: "dashboard-screen", details: "details-screen", item: "add-item-screen", food: "add-food-screen" };
   const ir = tela => {
     document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === TELAS[tela]));
@@ -260,7 +322,7 @@
     box.hidden = false;
   }
 
-  // Campos do cadastro gerados a partir das listas acima
+  // Geração dos campos de cadastro
   $("#macros-fields").innerHTML = MACROS.map(([k, nome, un]) => `
     <div class="form-group">
       <label>${nome}</label>
@@ -292,13 +354,49 @@
       </div>
     </div>`).join("");
 
-  // Dashboard de refeições
+  // Funções de Refeição Customizada
+  async function adicionarRefeicao() {
+    const nome = prompt("Digite o nome da nova refeição:");
+    if (!nome || !nome.trim()) return;
+    const id = nome.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-');
+    const ordem = estado.refeicoes.length + 1;
+    try {
+      await setDoc(doc(db, "dieta_refeicoes_tipos", id), { id, titulo: nome.trim(), icone: "🍽️", ordem });
+    } catch(err) { mostrarErro(err); }
+  }
+
+  async function excluirRefeicao(id) {
+    if(confirm("Tem certeza que deseja excluir permanentemente esta refeição?")) {
+      try {
+        await deleteDoc(doc(db, "dieta_refeicoes_tipos", id));
+        if(listenersItens[id]) { listenersItens[id](); delete listenersItens[id]; }
+        deleteMode = false;
+        renderDashboard();
+      } catch(err) { mostrarErro(err); }
+    }
+  }
+
+  // Dashboard de refeições (Filtrado por Data)
   function renderDashboard() {
-    $("#meals-container").innerHTML = REFEICOES.map(r => {
-      const itens = estado.itens[r.id] || [];
+    const strDataAtual = obterDataString(dataAtual);
+    const strDataHoje = obterDataString(new Date());
+
+    $("#meals-container").innerHTML = estado.refeicoes.map(r => {
+      const todosItens = estado.itens[r.id] || [];
+      // Filtra os itens pela data atual. Itens antigos sem data aparecem no "Hoje"
+      const itens = todosItens.filter(i => {
+        if(i.dataRef) return i.dataRef === strDataAtual;
+        return strDataAtual === strDataHoje; 
+      });
+
       const t = somar(itens);
       const p = percentuais(t);
       const nomes = itens.map(i => escapar(i.nome)).join(", ");
+      
+      const actionBtn = deleteMode 
+        ? `<button class="del-btn" data-del="${r.id}">❌</button>`
+        : `<button class="add-btn" data-add="${r.id}">+</button>`;
+
       return `
         <div class="meal-card" data-meal="${r.id}">
           <div class="meal-icon">${r.icone}</div>
@@ -317,12 +415,12 @@
               <span class="dot dot-prot">${fmt(p.prot)}%</span>
             </div>
           </div>
-          <button class="add-btn" data-add="${r.id}">+</button>
+          ${actionBtn}
         </div>`;
     }).join("");
   }
 
-  // Detalhes da refeição
+  // Detalhes da refeição (Filtrado por Data)
   function abrirDetalhes(id) {
     refeicaoAtual = id;
     renderDetalhes();
@@ -330,10 +428,18 @@
   }
 
   function renderDetalhes() {
-    const r = REFEICOES.find(x => x.id === refeicaoAtual);
-    const itens = estado.itens[refeicaoAtual] || [];
+    const r = estado.refeicoes.find(x => x.id === refeicaoAtual);
+    const todosItens = estado.itens[refeicaoAtual] || [];
+    
+    const strDataAtual = obterDataString(dataAtual);
+    const strDataHoje = obterDataString(new Date());
+    const itens = todosItens.filter(i => {
+      if(i.dataRef) return i.dataRef === strDataAtual;
+      return strDataAtual === strDataHoje; 
+    });
+
     const t = somar(itens);
-    $("#detail-title").textContent = r.titulo;
+    $("#detail-title").textContent = r ? r.titulo : "";
     $("#detail-kcal").textContent = `${fmt(t.kcal)} kcal`;
     $("#detail-carb").textContent = `${fmt(t.carb)}g`;
     $("#detail-fat").textContent = `${fmt(t.fat)}g`;
@@ -347,19 +453,21 @@
             </div>
             <div style="font-weight:500">${fmt(i.kcal)} kcal</div>
           </div>`).join("")
-      : `<p class="vazio">Nenhum alimento registrado nesta refeição.</p>`;
+      : `<p class="vazio">Nenhum alimento registrado nesta refeição hoje.</p>`;
   }
 
   // Modal de ações da refeição
   function abrirModal(id) {
     refeicaoAtual = id;
-    $("#modal-title").textContent = REFEICOES.find(r => r.id === id).titulo;
+    const r = estado.refeicoes.find(r => r.id === id);
+    $("#modal-title").textContent = r ? r.titulo : "";
     $("#action-modal").classList.add("active");
   }
 
   // Adicionar alimento já cadastrado a uma refeição
   function abrirAdicionarItem() {
-    $("#item-title").textContent = `Adicionar em ${REFEICOES.find(r => r.id === refeicaoAtual).titulo}`;
+    const r = estado.refeicoes.find(r => r.id === refeicaoAtual);
+    $("#item-title").textContent = `Adicionar em ${r ? r.titulo : ""}`;
     $("#item-select").innerHTML = estado.alimentos.length
       ? estado.alimentos.map(a => `<option value="${a.id}">${escapar(a.nome)} (${fmt(a.porcao)} ${a.unidade})</option>`).join("")
       : `<option value="">Cadastre um alimento primeiro</option>`;
@@ -389,7 +497,8 @@
     try {
       await addDoc(collection(db, "dieta_refeicoes", refeicaoAtual, "itens"), {
         nome: a.nome, alimentoId: a.id, quantidade: qtd, unidade: a.unidade,
-        kcal: c.kcal, carb: c.carb, fat: c.fat, prot: c.prot, criadoEm: Date.now()
+        kcal: c.kcal, carb: c.carb, fat: c.fat, prot: c.prot, 
+        criadoEm: Date.now(), dataRef: obterDataString(dataAtual) // Salva atrelado ao dia atual
       });
       abrirDetalhes(refeicaoAtual);
     } catch (err) {
@@ -431,7 +540,7 @@
     }
   }
 
-  // Máscara PT-BR: milhar com ponto, até 3 casas decimais
+  // Máscara PT-BR
   function mascaraDecimal(e) {
     const el = e.target;
     if (!el.classList.contains("decimal-input")) return;
@@ -445,17 +554,37 @@
     if (el.id === "item-qtd") atualizarResumo();
   }
 
-  // Eventos
+  // Eventos de clique na tela
   document.addEventListener("click", e => {
+    // Menu Dropdown da Data
+    if (!e.target.closest("#menu-btn") && !e.target.closest("#meal-menu")) {
+      $("#meal-menu").hidden = true;
+    }
+
     const btn = e.target.closest("[data-go]");
     if (btn) ir(btn.dataset.go);
   });
 
+  $("#prev-date").addEventListener("click", () => mudarData(-1));
+  $("#next-date").addEventListener("click", () => mudarData(1));
+  $("#menu-btn").addEventListener("click", () => $("#meal-menu").hidden = !$("#meal-menu").hidden);
+  
+  $("#btn-add-meal").addEventListener("click", () => { $("#meal-menu").hidden = true; adicionarRefeicao(); });
+  $("#btn-toggle-delete").addEventListener("click", () => {
+    $("#meal-menu").hidden = true;
+    deleteMode = !deleteMode;
+    renderDashboard();
+  });
+
   $("#meals-container").addEventListener("click", e => {
+    const del = e.target.closest("[data-del]");
+    if (del) { e.stopPropagation(); return excluirRefeicao(del.dataset.del); }
+
     const add = e.target.closest("[data-add]");
-    if (add) return abrirModal(add.dataset.add);
+    if (add) { e.stopPropagation(); return abrirModal(add.dataset.add); }
+    
     const card = e.target.closest("[data-meal]");
-    if (card) abrirDetalhes(card.dataset.meal);
+    if (card && !deleteMode) abrirDetalhes(card.dataset.meal);
   });
 
   $("#action-modal").addEventListener("click", e => { if (e.target.id === "action-modal") fecharModal(); });
@@ -473,22 +602,37 @@
     if (grupo.hidden) grupo.querySelector("input").value = "";
   });
 
-  // Firestore: leitura em tempo real
+  // Listeners Dinâmicos do Firestore
+  function configurarListenersItens() {
+    estado.refeicoes.forEach(r => {
+      if (!listenersItens[r.id]) {
+        listenersItens[r.id] = onSnapshot(query(collection(db, "dieta_refeicoes", r.id, "itens"), orderBy("criadoEm")),
+          snap => {
+            estado.itens[r.id] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderDashboard();
+            if (refeicaoAtual === r.id) renderDetalhes();
+          }, mostrarErro);
+      }
+    });
+  }
+
+  // Lógica principal de inicialização
   onSnapshot(query(collection(db, "dieta_alimentos"), orderBy("nome")),
     snap => { estado.alimentos = snap.docs.map(d => ({ id: d.id, ...d.data() })); },
     mostrarErro);
 
-  REFEICOES.forEach(r => {
-    onSnapshot(query(collection(db, "dieta_refeicoes", r.id, "itens"), orderBy("criadoEm")),
-      snap => {
-        estado.itens[r.id] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderDashboard();
-        if (refeicaoAtual === r.id) renderDetalhes();
-      },
-      mostrarErro);
-  });
+  // Inicializa lista dinâmica de refeições
+  onSnapshot(collection(db, "dieta_refeicoes_tipos"), snap => {
+    if (snap.empty) {
+      // Se não houver configurações, grava os padrões
+      DEFAULT_REFEICOES.forEach(m => setDoc(doc(db, "dieta_refeicoes_tipos", m.id), m));
+    } else {
+      estado.refeicoes = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => a.ordem - b.ordem);
+      configurarListenersItens();
+      renderDashboard();
+    }
+  }, mostrarErro);
 
-  renderDashboard();
 </script>
 </body>
 </html>
