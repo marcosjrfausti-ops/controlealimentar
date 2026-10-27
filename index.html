@@ -1,1115 +1,494 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fine Tuning - Tracker</title>
-    <style>
-        :root {
-            --bg-color: #0d0d0d;
-            --card-bg: #1c1c1e;
-            --icon-bg: #2c2927;
-            --text-main: #f5f5f5;
-            --text-sec: #9e9e9e;
-            --accent: #bb86fc;
-            --carb-color: #a275ff;
-            --fat-color: #ff5252;
-            --prot-color: #ffca28;
-            --border-color: #333;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fine Tuning - Tracker</title>
+<style>
+  :root {
+    --bg-color: #0d0d0d; --card-bg: #1c1c1e; --icon-bg: #2c2927;
+    --text-main: #f5f5f5; --text-sec: #9e9e9e; --accent: #bb86fc;
+    --carb-color: #a275ff; --fat-color: #ff5252; --prot-color: #ffca28; --border-color: #333;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  body { background: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; }
+  #app { width: 100%; max-width: 600px; position: relative; min-height: 100vh; overflow-x: hidden; }
+  .screen { display: none; padding: 1.5rem 1.5rem 3rem; animation: fadeIn .3s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: none; } }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
+  /* Início */
+  #home-screen { height: 100vh; padding: 0; }
+  #home-screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .home-title { position: absolute; top: 3rem; font-size: 2.2rem; font-weight: 600; letter-spacing: 1px; }
+  .home-btn { background: var(--accent); color: #0d0d0d; border: none; padding: 1rem 4rem; font-size: 1.2rem; font-weight: 600; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(187,134,252,.3); transition: transform .2s; }
+  .home-btn:hover { transform: scale(1.05); }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-        }
+  /* Geral */
+  .header { display: flex; align-items: center; margin-bottom: 1.5rem; gap: 1rem; }
+  .header h2 { font-size: 1.2rem; font-weight: 500; flex-grow: 1; }
+  .icon-btn { background: none; border: none; color: var(--text-sec); font-size: 1.5rem; cursor: pointer; padding: .5rem; }
+  .erro { background: #3b1111; color: #ff8a8a; border-radius: 10px; padding: .8rem 1rem; margin-bottom: 1rem; font-size: .85rem; }
+  .vazio { color: var(--text-sec); text-align: center; margin-top: 2rem; }
+  .sub { font-size: 1rem; font-weight: 500; margin-bottom: 1rem; }
+  .preview { font-size: .8rem; color: var(--text-sec); margin-top: .5rem; }
 
-        #app {
-            width: 100%;
-            max-width: 600px;
-            position: relative;
-            background-color: var(--bg-color);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+  /* Refeições */
+  .meal-card { display: flex; align-items: center; padding: 1.2rem 0; border-bottom: 1px solid var(--border-color); cursor: pointer; }
+  .meal-card:hover { background: rgba(255,255,255,.02); }
+  .meal-icon { width: 50px; height: 50px; background: var(--icon-bg); border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; margin-right: 1rem; flex-shrink: 0; }
+  .meal-content { flex-grow: 1; padding-right: 1rem; }
+  .meal-title { font-size: 1rem; font-weight: 500; margin-bottom: .2rem; }
+  .meal-desc { font-size: .75rem; color: var(--text-sec); margin-bottom: .4rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
+  .meal-kcal { font-size: .8rem; color: var(--text-sec); margin-bottom: .5rem; }
+  .macros-bar { display: flex; height: 4px; border-radius: 2px; overflow: hidden; background: #333; margin-bottom: .3rem; }
+  .macros-text { font-size: .65rem; color: var(--text-sec); display: flex; gap: .5rem; }
+  .dot { display: flex; align-items: center; }
+  .dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
+  .dot-carb::before { background: var(--carb-color); }
+  .dot-fat::before { background: var(--fat-color); }
+  .dot-prot::before { background: var(--prot-color); }
+  .add-btn { background: none; border: none; color: var(--text-main); font-size: 1.8rem; font-weight: 300; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
+  .add-btn:hover { background: var(--icon-bg); }
 
-        .screen {
-            display: none;
-            padding: 1.5rem;
-            animation: fadeIn 0.3s ease;
-            padding-bottom: 3rem;
-        }
+  /* Detalhes */
+  .macro-summary { background: var(--card-bg); border-radius: 20px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .macro-summary h3 { font-size: 2.5rem; font-weight: 300; text-align: center; margin-bottom: 1rem; }
+  .macro-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center; }
+  .macro-grid p { font-size: 1.2rem; font-weight: 600; }
+  .macro-grid span { font-size: .75rem; color: var(--text-sec); }
+  .food-list-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--card-bg); border-radius: 12px; margin-bottom: .8rem; }
+  .food-name { font-weight: 500; font-size: .95rem; }
+  .food-macros { font-size: .75rem; color: var(--text-sec); margin-top: .3rem; }
 
-        .screen.active {
-            display: block;
-        }
+  /* Formulários */
+  .form-section { background: var(--card-bg); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .form-section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1.2rem; color: var(--accent); border-bottom: 1px solid var(--border-color); padding-bottom: .5rem; }
+  .form-group { margin-bottom: 1.2rem; }
+  .form-group label { display: block; font-size: .9rem; color: var(--text-sec); margin-bottom: .5rem; }
+  .input-group { display: flex; gap: .5rem; }
+  .input-control, .unit-select { background: #2c2c2e; border: 1px solid var(--border-color); color: var(--text-main); padding: .8rem; border-radius: 8px; font-size: 1rem; outline: none; }
+  .input-control { flex-grow: 1; width: 100%; }
+  .unit-select { font-size: .9rem; cursor: pointer; }
+  .input-control:focus, .unit-select:focus { border-color: var(--accent); }
+  .fixed-unit { display: flex; align-items: center; justify-content: center; background: var(--icon-bg); padding: 0 1rem; border-radius: 8px; color: var(--text-sec); font-size: .9rem; min-width: 60px; }
+  .save-btn { width: 100%; padding: 1.2rem; background: var(--accent); color: #000; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 1rem; }
+  .save-btn:hover { background: #a46cf5; }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateX(10px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        /* HOME SCREEN */
-        #home-screen {
-            height: 100vh;
-            padding: 0;
-        }
-        
-        #home-screen.active {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .home-title {
-            position: absolute;
-            top: 3rem;
-            font-size: 2.2rem;
-            font-weight: 600;
-            color: var(--text-main);
-            letter-spacing: 1px;
-        }
-
-        .home-btn {
-            background-color: var(--accent);
-            color: #0d0d0d;
-            border: none;
-            padding: 1rem 4rem;
-            font-size: 1.2rem;
-            font-weight: 600;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.2s;
-            box-shadow: 0 4px 15px rgba(187, 134, 252, 0.3);
-        }
-
-        .home-btn:hover {
-            background-color: #a46cf5;
-            transform: scale(1.05);
-        }
-
-        /* HEADER */
-        .header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            gap: 1rem;
-        }
-
-        .header h2 {
-            font-size: 1.2rem;
-            font-weight: 500;
-            flex-grow: 1;
-        }
-
-        .icon-btn {
-            background: none;
-            border: none;
-            color: var(--text-sec);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0.5rem;
-        }
-
-        /* MEAL CARD */
-        .meal-card {
-            display: flex;
-            align-items: center;
-            padding: 1.2rem 0;
-            border-bottom: 1px solid var(--border-color);
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .meal-card:hover {
-            background-color: rgba(255, 255, 255, 0.02);
-        }
-
-        .meal-icon {
-            width: 50px;
-            height: 50px;
-            background-color: var(--icon-bg);
-            border-radius: 12px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            margin-right: 1rem;
-            flex-shrink: 0;
-        }
-
-        .meal-content {
-            flex-grow: 1;
-            padding-right: 1rem;
-        }
-
-        .meal-title {
-            font-size: 1rem;
-            font-weight: 500;
-            margin-bottom: 0.2rem;
-        }
-
-        .meal-desc {
-            font-size: 0.75rem;
-            color: var(--text-sec);
-            margin-bottom: 0.4rem;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.3;
-        }
-
-        .meal-kcal {
-            font-size: 0.8rem;
-            color: var(--text-sec);
-            margin-bottom: 0.5rem;
-        }
-
-        .macros-bar {
-            display: flex;
-            height: 4px;
-            border-radius: 2px;
-            overflow: hidden;
-            background-color: #333;
-            margin-bottom: 0.3rem;
-            width: 100%;
-        }
-
-        .macros-text {
-            font-size: 0.65rem;
-            color: var(--text-sec);
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .dot {
-            display: flex;
-            align-items: center;
-        }
-
-        .dot::before {
-            content: "";
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            margin-right: 4px;
-        }
-        .dot-carb::before { background-color: var(--carb-color); }
-        .dot-fat::before { background-color: var(--fat-color); }
-        .dot-prot::before { background-color: var(--prot-color); }
-
-        .add-btn {
-            background: none;
-            border: none;
-            color: var(--text-main);
-            font-size: 1.8rem;
-            font-weight: 300;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            border-radius: 50%;
-            transition: background-color 0.2s;
-        }
-
-        .add-btn:hover {
-            background-color: var(--icon-bg);
-        }
-
-        /* DETAILS SCREEN */
-        .macro-summary {
-            background-color: var(--card-bg);
-            border-radius: 20px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .macro-summary h3 {
-            font-size: 2.5rem;
-            font-weight: 300;
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-
-        .macro-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            text-align: center;
-        }
-        
-        .macro-grid-item p {
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-        
-        .macro-grid-item span {
-            font-size: 0.75rem;
-            color: var(--text-sec);
-        }
-
-        .food-list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            margin-bottom: 0.8rem;
-        }
-
-        .food-name {
-            font-weight: 500;
-            font-size: 0.95rem;
-        }
-        
-        .food-macros {
-            font-size: 0.75rem;
-            color: var(--text-sec);
-            margin-top: 0.3rem;
-        }
-
-        /* FORM STYLES (NOVO CADASTRO) */
-        .form-section {
-            background-color: var(--card-bg);
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1.2rem;
-            color: var(--accent);
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.5rem;
-        }
-        
-        .form-group {
-            margin-bottom: 1.2rem;
-        }
-        
-        .form-group label {
-            display: block;
-            font-size: 0.9rem;
-            color: var(--text-sec);
-            margin-bottom: 0.5rem;
-        }
-        
-        .input-group {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .input-control {
-            flex-grow: 1;
-            width: 100%;
-            background-color: #2c2c2e;
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 0.8rem;
-            border-radius: 8px;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        
-        .input-control:focus {
-            border-color: var(--accent);
-        }
-        
-        .fixed-unit {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: var(--icon-bg);
-            padding: 0 1rem;
-            border-radius: 8px;
-            color: var(--text-sec);
-            font-size: 0.9rem;
-            min-width: 60px;
-        }
-        
-        .unit-select {
-            background-color: #2c2c2e;
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 0.8rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            outline: none;
-            cursor: pointer;
-        }
-        
-        .unit-select:focus {
-            border-color: var(--accent);
-        }
-
-        .save-btn {
-            width: 100%;
-            padding: 1.2rem;
-            background-color: var(--accent);
-            color: #000;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 1rem;
-            transition: background-color 0.2s;
-        }
-
-        .save-btn:hover {
-            background-color: #a46cf5;
-        }
-        
-        .save-btn:disabled {
-            background-color: #5a4b75;
-            cursor: not-allowed;
-            color: #999;
-        }
-
-        /* MODAL */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: none;
-            justify-content: center;
-            align-items: flex-end;
-            z-index: 1000;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background-color: var(--card-bg);
-            width: 100%;
-            max-width: 600px;
-            border-radius: 20px 20px 0 0;
-            padding: 2rem 1.5rem;
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
-
-        .modal-btn {
-            width: 100%;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 12px;
-            border: none;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            background-color: var(--icon-bg);
-            color: var(--text-main);
-            transition: background-color 0.2s;
-        }
-
-        .modal-btn:hover {
-            background-color: #3d3a38;
-        }
-        
-        .modal-btn.primary {
-            background-color: var(--accent);
-            color: #000;
-        }
-
-        .modal-btn.primary:hover {
-            background-color: #a46cf5;
-        }
-    </style>
-    
-    <!-- FIREBASE SDK COMPAT -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: none; justify-content: center; align-items: flex-end; z-index: 1000; }
+  .modal-overlay.active { display: flex; }
+  .modal-content { background: var(--card-bg); width: 100%; max-width: 600px; border-radius: 20px 20px 0 0; padding: 2rem 1.5rem; animation: slideUp .3s ease; }
+  .modal-title { margin-bottom: 1.5rem; text-align: center; font-weight: 500; }
+  .modal-btn { width: 100%; padding: 1rem; margin-bottom: 1rem; border-radius: 12px; border: none; font-size: 1rem; font-weight: 500; cursor: pointer; background: var(--icon-bg); color: var(--text-main); }
+  .modal-btn.primary { background: var(--accent); color: #000; }
+</style>
 </head>
 <body>
+<div id="app">
 
-    <div id="app">
-        <!-- TELA 0: INICIAL -->
-        <div id="home-screen" class="screen active">
-            <h1 class="home-title">Fine Tuning</h1>
-            <button class="home-btn" onclick="startApp()">Dieta</button>
-        </div>
+  <section id="home-screen" class="screen active">
+    <h1 class="home-title">Fine Tuning</h1>
+    <button class="home-btn" data-go="dashboard">Dieta</button>
+  </section>
 
-        <!-- TELA 1: LISTA DE REFEIÇÕES -->
-        <div id="dashboard-screen" class="screen">
-            <div class="header">
-                <button class="icon-btn" onclick="goHome()">&#10094;</button>
-                <h2>Registrar refeição</h2>
-                <button class="icon-btn">&#8942;</button>
-            </div>
-            <div id="meals-container">
-                <!-- Renderizado via JS -->
-            </div>
-        </div>
-
-        <!-- TELA 2: DETALHES DA REFEIÇÃO -->
-        <div id="details-screen" class="screen">
-            <div class="header">
-                <button class="icon-btn" onclick="goBackToDashboard()">&#10094;</button>
-                <h2 id="detail-title">Detalhes</h2>
-            </div>
-            
-            <div class="macro-summary">
-                <h3 id="detail-kcal">0 kcal</h3>
-                <div class="macro-grid">
-                    <div class="macro-grid-item">
-                        <span style="color: var(--carb-color)">Carboidr</span>
-                        <p id="detail-carb">0g</p>
-                    </div>
-                    <div class="macro-grid-item">
-                        <span style="color: var(--fat-color)">Gord.</span>
-                        <p id="detail-fat">0g</p>
-                    </div>
-                    <div class="macro-grid-item">
-                        <span style="color: var(--prot-color)">Proteína</span>
-                        <p id="detail-prot">0g</p>
-                    </div>
-                </div>
-            </div>
-
-            <h3 style="font-size: 1rem; margin-bottom: 1rem; font-weight: 500;">Alimentos Consumidos</h3>
-            <div id="foods-container">
-                <!-- Renderizado via JS -->
-            </div>
-        </div>
-
-        <!-- TELA 3: CADASTRAR ALIMENTOS -->
-        <div id="add-food-screen" class="screen">
-            <div class="header">
-                <button class="icon-btn" onclick="goBackFromAddFood()">&#10094;</button>
-                <h2>Cadastrar Alimento</h2>
-            </div>
-
-            <!-- Formulário atualizado com ONSUBMIT apontando para a função do Firestore -->
-            <form id="add-food-form" onsubmit="saveFoodToFirestore(event)">
-                
-                <!-- Informação Básica -->
-                <div class="form-section">
-                    <div class="form-section-title">📝 Informação Nutricional</div>
-                    <div class="form-group">
-                        <label>Nome</label>
-                        <input type="text" id="food-name" class="input-control" placeholder="Ex: Arroz Branco" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Porção</label>
-                        <div class="input-group">
-                            <input type="text" id="food-portion" class="input-control decimal-input" placeholder="0,000" inputmode="decimal" required>
-                            <select id="food-unit" class="unit-select">
-                                <option value="g">g</option>
-                                <option value="un">un</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Valor energético</label>
-                        <div class="input-group">
-                            <input type="text" id="food-kcal" class="input-control decimal-input" placeholder="0,000" inputmode="decimal" required>
-                            <div class="fixed-unit">kcal</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Macronutrientes -->
-                <div class="form-section">
-                    <div class="form-section-title">🍞 Macronutrientes</div>
-                    <div class="form-group">
-                        <label>Carboidratos totais</label>
-                        <div class="input-group">
-                            <input type="text" id="food-carb" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">g</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Açúcares totais</label>
-                        <div class="input-group">
-                            <input type="text" id="food-sugar" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">g</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Açúcares adicionados</label>
-                        <div class="input-group">
-                            <input type="text" id="food-addedsugar" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">g</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Proteínas</label>
-                        <div class="input-group">
-                            <input type="text" id="food-prot" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">g</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Gorduras totais</label>
-                        <div class="input-group">
-                            <input type="text" id="food-fat" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">g</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Gorduras saturadas</label>
-                        <div class="input-group">
-                            <input type="text" id="food-satfat" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">g</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Gorduras trans</label>
-                        <div class="input-group">
-                            <input type="text" id="food-transfat" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">g</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Fibra alimentar</label>
-                        <div class="input-group">
-                            <input type="text" id="food-fiber" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">g</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Sódio</label>
-                        <div class="input-group">
-                            <input type="text" id="food-sodium" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">mg</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Vitaminas -->
-                <div class="form-section">
-                    <div class="form-section-title">💊 Micronutrientes (Vitaminas)</div>
-                    
-                    <div class="form-group">
-                        <label>Vitamina A</label>
-                        <div class="input-group">
-                            <input type="text" id="vit-a" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <select id="vit-a-unit" class="unit-select" onchange="toggleRef(this)">
-                                <option value="mcg">mcg</option>
-                                <option value="g">g</option>
-                                <option value="%">%</option>
-                            </select>
-                        </div>
-                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
-                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
-                            <input type="text" id="vit-a-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Vitamina B2 (Riboflavina)</label>
-                        <div class="input-group">
-                            <input type="text" id="vit-b2" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <select id="vit-b2-unit" class="unit-select" onchange="toggleRef(this)">
-                                <option value="mcg">mcg</option>
-                                <option value="g">g</option>
-                                <option value="%">%</option>
-                            </select>
-                        </div>
-                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
-                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
-                            <input type="text" id="vit-b2-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Vitamina B5 (Ácido Pantotênico)</label>
-                        <div class="input-group">
-                            <input type="text" id="vit-b5" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <select id="vit-b5-unit" class="unit-select" onchange="toggleRef(this)">
-                                <option value="mcg">mcg</option>
-                                <option value="g">g</option>
-                                <option value="%">%</option>
-                            </select>
-                        </div>
-                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
-                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
-                            <input type="text" id="vit-b5-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Vitamina B9 (Ácido Fólico)</label>
-                        <div class="input-group">
-                            <input type="text" id="vit-b9" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <select id="vit-b9-unit" class="unit-select" onchange="toggleRef(this)">
-                                <option value="mcg">mcg</option>
-                                <option value="g">g</option>
-                                <option value="%">%</option>
-                            </select>
-                        </div>
-                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
-                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
-                            <input type="text" id="vit-b9-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Vitamina B12 (Cobalamina)</label>
-                        <div class="input-group">
-                            <input type="text" id="vit-b12" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <select id="vit-b12-unit" class="unit-select" onchange="toggleRef(this)">
-                                <option value="mcg">mcg</option>
-                                <option value="g">g</option>
-                                <option value="%">%</option>
-                            </select>
-                        </div>
-                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
-                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
-                            <input type="text" id="vit-b12-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Vitamina C</label>
-                        <div class="input-group">
-                            <input type="text" id="vit-c" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <select id="vit-c-unit" class="unit-select" onchange="toggleRef(this)">
-                                <option value="mcg">mcg</option>
-                                <option value="g">g</option>
-                                <option value="%">%</option>
-                            </select>
-                        </div>
-                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
-                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
-                            <input type="text" id="vit-c-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Vitamina D</label>
-                        <div class="input-group">
-                            <input type="text" id="vit-d" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <select id="vit-d-unit" class="unit-select" onchange="toggleRef(this)">
-                                <option value="mcg">mcg</option>
-                                <option value="g">g</option>
-                                <option value="%">%</option>
-                            </select>
-                        </div>
-                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
-                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
-                            <input type="text" id="vit-d-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Vitamina E</label>
-                        <div class="input-group">
-                            <input type="text" id="vit-e" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <select id="vit-e-unit" class="unit-select" onchange="toggleRef(this)">
-                                <option value="mcg">mcg</option>
-                                <option value="g">g</option>
-                                <option value="%">%</option>
-                            </select>
-                        </div>
-                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
-                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
-                            <input type="text" id="vit-e-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Minerais Essenciais -->
-                <div class="form-section">
-                    <div class="form-section-title">🪨 Micronutrientes (Minerais)</div>
-                    <div class="form-group">
-                        <label>Cálcio</label>
-                        <div class="input-group">
-                            <input type="text" id="min-calcium" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">mg</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Ferro</label>
-                        <div class="input-group">
-                            <input type="text" id="min-iron" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">mg</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Zinco</label>
-                        <div class="input-group">
-                            <input type="text" id="min-zinc" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">mg</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Fósforo</label>
-                        <div class="input-group">
-                            <input type="text" id="min-phosphorus" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">mg</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Selênio</label>
-                        <div class="input-group">
-                            <input type="text" id="min-selenium" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">mcg</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Potássio</label>
-                        <div class="input-group">
-                            <input type="text" id="min-potassium" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <div class="fixed-unit">mg</div>
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" class="save-btn">Salvar Alimento</button>
-            </form>
-        </div>
+  <section id="dashboard-screen" class="screen">
+    <div class="header">
+      <button class="icon-btn" data-go="home">&#10094;</button>
+      <h2>Registrar refeição</h2>
     </div>
+    <div id="erro" class="erro" hidden></div>
+    <div id="meals-container"></div>
+  </section>
 
-    <!-- MODAL DE AÇÕES -->
-    <div id="action-modal" class="modal-overlay" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <h3 style="margin-bottom: 1.5rem; text-align: center; font-weight: 500;" id="modal-title">Opções</h3>
-            <button class="modal-btn" onclick="handleEdit()">Editar alimentos</button>
-            <button class="modal-btn primary" onclick="handleAdd()">Cadastrar novos alimentos</button>
-        </div>
+  <section id="details-screen" class="screen">
+    <div class="header">
+      <button class="icon-btn" data-go="dashboard">&#10094;</button>
+      <h2 id="detail-title">Detalhes</h2>
     </div>
+    <div class="macro-summary">
+      <h3 id="detail-kcal">0 kcal</h3>
+      <div class="macro-grid">
+        <div><span style="color:var(--carb-color)">Carboidr</span><p id="detail-carb">0g</p></div>
+        <div><span style="color:var(--fat-color)">Gord.</span><p id="detail-fat">0g</p></div>
+        <div><span style="color:var(--prot-color)">Proteína</span><p id="detail-prot">0g</p></div>
+      </div>
+    </div>
+    <h3 class="sub">Alimentos Consumidos</h3>
+    <div id="foods-container"></div>
+  </section>
 
-    <script>
-        // INICIALIZAÇÃO FIREBASE (Usando credenciais das imagens)
-        const firebaseConfig = {
-            apiKey: "AIzaSyBLTPfj097saA-VrtxqWCLWDdS5acjgbEs",
-            authDomain: "os-coretiva-preventiva.firebaseapp.com",
-            projectId: "os-coretiva-preventiva",
-            storageBucket: "os-coretiva-preventiva.firebasestorage.app",
-            messagingSenderId: "1074947472672",
-            appId: "1:1074947472672:web:c797327b7c398fa94b2b45",
-            measurementId: "G-H01XP1X013"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+  <section id="add-item-screen" class="screen">
+    <div class="header">
+      <button class="icon-btn" data-go="details">&#10094;</button>
+      <h2 id="item-title">Adicionar alimento</h2>
+    </div>
+    <form id="item-form">
+      <div class="form-section">
+        <div class="form-group">
+          <label>Alimento</label>
+          <select id="item-select" class="input-control" required></select>
+        </div>
+        <div class="form-group">
+          <label>Quantidade</label>
+          <div class="input-group">
+            <input id="item-qtd" class="input-control decimal-input" placeholder="0,000" inputmode="decimal" required>
+            <div id="item-unidade" class="fixed-unit">g</div>
+          </div>
+        </div>
+        <p id="item-preview" class="preview"></p>
+      </div>
+      <button type="submit" class="save-btn">Adicionar à refeição</button>
+    </form>
+  </section>
 
-        // Formatação PT-BR de números
-        function formatNumberPTBR(num) {
-            if (num === undefined || num === null || isNaN(num)) return "0";
-            return new Intl.NumberFormat('pt-BR', {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 3 
-            }).format(num);
-        }
+  <section id="add-food-screen" class="screen">
+    <div class="header">
+      <button class="icon-btn" data-go="dashboard">&#10094;</button>
+      <h2>Cadastrar Alimento</h2>
+    </div>
+    <form id="food-form">
+      <div class="form-section">
+        <div class="form-section-title">📝 Informação Nutricional</div>
+        <div class="form-group">
+          <label>Nome</label>
+          <input class="input-control" name="nome" placeholder="Ex: Arroz Branco" required>
+        </div>
+        <div class="form-group">
+          <label>Porção</label>
+          <div class="input-group">
+            <input class="input-control decimal-input" name="porcao" placeholder="0,000" inputmode="decimal" required>
+            <select class="unit-select" name="porcaoUnidade"><option value="g">g</option><option value="un">un</option></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Valor energético</label>
+          <div class="input-group">
+            <input class="input-control decimal-input" name="kcal" placeholder="0,000" inputmode="decimal" required>
+            <div class="fixed-unit">kcal</div>
+          </div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">🍞 Macronutrientes</div>
+        <div id="macros-fields"></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">💊 Micronutrientes (Vitaminas)</div>
+        <div id="vitaminas-fields"></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">🪨 Micronutrientes (Minerais)</div>
+        <div id="minerais-fields"></div>
+      </div>
+      <button type="submit" class="save-btn">Salvar Alimento</button>
+    </form>
+  </section>
 
-        // Converter strings PT-BR para Float
-        function parseInputPTBR(str) {
-            if (!str) return 0;
-            const cleanStr = str.replace(/\./g, '').replace(',', '.');
-            const val = parseFloat(cleanStr);
-            return isNaN(val) ? 0 : val;
-        }
+</div>
 
-        // Função para salvar no FIRESTORE
-        function saveFoodToFirestore(event) {
-            event.preventDefault();
-            
-            const btn = document.querySelector('.save-btn');
-            const originalText = btn.innerText;
-            btn.innerText = "Salvando...";
-            btn.disabled = true;
+<div id="action-modal" class="modal-overlay">
+  <div class="modal-content">
+    <h3 id="modal-title" class="modal-title">Opções</h3>
+    <button class="modal-btn" id="btn-add-item">Adicionar alimento à refeição</button>
+    <button class="modal-btn primary" id="btn-new-food">Cadastrar novos alimentos</button>
+  </div>
+</div>
 
-            const foodData = {
-                nome: document.getElementById('food-name').value,
-                porcao_valor: parseInputPTBR(document.getElementById('food-portion').value),
-                porcao_unidade: document.getElementById('food-unit').value,
-                kcal: parseInputPTBR(document.getElementById('food-kcal').value),
-                macros: {
-                    carboidratos: parseInputPTBR(document.getElementById('food-carb').value),
-                    acucares_totais: parseInputPTBR(document.getElementById('food-sugar').value),
-                    acucares_adicionados: parseInputPTBR(document.getElementById('food-addedsugar').value),
-                    proteinas: parseInputPTBR(document.getElementById('food-prot').value),
-                    gorduras_totais: parseInputPTBR(document.getElementById('food-fat').value),
-                    gorduras_saturadas: parseInputPTBR(document.getElementById('food-satfat').value),
-                    gorduras_trans: parseInputPTBR(document.getElementById('food-transfat').value),
-                    fibra_alimentar: parseInputPTBR(document.getElementById('food-fiber').value),
-                    sodio_mg: parseInputPTBR(document.getElementById('food-sodium').value)
-                },
-                criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-            };
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-            db.collection("alimentos").add(foodData)
-                .then((docRef) => {
-                    alert('Alimento salvo com sucesso na nuvem!');
-                    goBackFromAddFood();
-                })
-                .catch((error) => {
-                    console.error("Erro ao adicionar documento: ", error);
-                    alert("Erro ao salvar alimento. Verifique sua conexão e permissões do banco de dados.");
-                })
-                .finally(() => {
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                });
-        }
+  // Configuração do projeto Firebase (CONTROLE-ALIMENTAR)
+  const firebaseConfig = {
+    apiKey: "AIzaSyBLTPfj097saA-VrtxqWCLWDdS5acjgbEs",
+    authDomain: "os-coretiva-preventiva.firebaseapp.com",
+    projectId: "os-coretiva-preventiva",
+    storageBucket: "os-coretiva-preventiva.firebasestorage.app",
+    messagingSenderId: "1074947472672",
+    appId: "1:1074947472672:web:c797327b7c398fa94b2b45e",
+    measurementId: "G-H01XP1X013"
+  };
+  const db = getFirestore(initializeApp(firebaseConfig));
 
-        // 1. ESTRUTURA DE DADOS MOCK (Mantido para renderizar a dashboard base enquanto você não puxa o getDocs do Firebase)
-        const firestoreMock = {
-            meals: [
-                {
-                    id: "meal_1",
-                    title: "Café da manhã",
-                    icon: "🌅",
-                    foods: [
-                        { name: "Ovo Mexido", amount: "100g", kcal: 398.5, carb: 4.2, fat: 70.4, prot: 26 }
-                    ]
-                },
-                {
-                    id: "meal_2",
-                    title: "Almoço",
-                    icon: "☀️",
-                    foods: [
-                        { name: "Albumina (Naturovos)", amount: "2 scoops", kcal: 110, carb: 2.45, fat: 0.4, prot: 24.8 },
-                        { name: "Creatina", amount: "5g", kcal: 0, carb: 0, fat: 0, prot: 0 },
-                        { name: "Suco de Pêssego", amount: "200ml", kcal: 80, carb: 20, fat: 0, prot: 0 },
-                        { name: "Coxinha de Frango", amount: "1 unidade", kcal: 901.125, carb: 48, fat: 29.5, prot: 23 }
-                    ]
-                },
-                {
-                    id: "meal_3",
-                    title: "Jantar",
-                    icon: "🌙",
-                    foods: [
-                        { name: "Arroz Premium", amount: "150g", kcal: 195, carb: 42, fat: 0, prot: 4 },
-                        { name: "Sardinhas com Óleo", amount: "1 lata", kcal: 140, carb: 0, fat: 32, prot: 22 }
-                    ]
-                },
-                {
-                    id: "meal_4",
-                    title: "Lanches",
-                    icon: "🌤️",
-                    foods: []
-                }
-            ]
-        };
+  // Estrutura fixa
+  const REFEICOES = [
+    { id: "cafe-da-manha", titulo: "Café da manhã", icone: "🌅" },
+    { id: "almoco", titulo: "Almoço", icone: "☀️" },
+    { id: "jantar", titulo: "Jantar", icone: "🌙" },
+    { id: "lanches", titulo: "Lanches", icone: "🌤️" }
+  ];
+  const MACROS = [
+    ["carb", "Carboidratos totais", "g"], ["acucTot", "Açúcares totais", "g"], ["acucAdd", "Açúcares adicionados", "g"],
+    ["prot", "Proteínas", "g"], ["fat", "Gorduras totais", "g"], ["fatSat", "Gorduras saturadas", "g"],
+    ["fatTrans", "Gorduras trans", "g"], ["fibra", "Fibra alimentar", "g"], ["sodio", "Sódio", "mg"]
+  ];
+  const VITAMINAS = ["Vitamina A", "Vitamina B2 (Riboflavina)", "Vitamina B5 (Ácido Pantotênico)", "Vitamina B9 (Ácido Fólico)", "Vitamina B12 (Cobalamina)", "Vitamina C", "Vitamina D", "Vitamina E"];
+  const MINERAIS = [["Cálcio", "mg"], ["Ferro", "mg"], ["Zinco", "mg"], ["Fósforo", "mg"], ["Selênio", "mcg"], ["Potássio", "mg"]];
 
-        // Navegação
-        function startApp() {
-            document.getElementById("home-screen").classList.remove("active");
-            document.getElementById("dashboard-screen").classList.add("active");
-        }
+  const estado = { alimentos: [], itens: {} };
+  let refeicaoAtual = null;
 
-        function goHome() {
-            document.getElementById("dashboard-screen").classList.remove("active");
-            document.getElementById("home-screen").classList.add("active");
-        }
+  // Utilitários
+  const $ = sel => document.querySelector(sel);
+  const fmt = n => new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 }).format(Number(n) || 0);
+  const escapar = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const parseInputPTBR = s => { const v = parseFloat(String(s || "").replace(/\./g, "").replace(",", ".")); return isNaN(v) ? 0 : v; };
+  const somar = itens => itens.reduce((a, i) => ({ kcal: a.kcal + i.kcal, carb: a.carb + i.carb, fat: a.fat + i.fat, prot: a.prot + i.prot }), { kcal: 0, carb: 0, fat: 0, prot: 0 });
+  const calcularItem = (a, qtd) => {
+    const f = qtd / a.porcao;
+    return { kcal: a.kcal * f, carb: a.nutrientes.carb * f, fat: a.nutrientes.fat * f, prot: a.nutrientes.prot * f };
+  };
+  const percentuais = t => {
+    const total = t.carb + t.fat + t.prot;
+    if (!total) return { carb: 0, fat: 0, prot: 0 };
+    return { carb: t.carb / total * 100, fat: t.fat / total * 100, prot: t.prot / total * 100 };
+  };
+  const TELAS = { home: "home-screen", dashboard: "dashboard-screen", details: "details-screen", item: "add-item-screen", food: "add-food-screen" };
+  const ir = tela => {
+    document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === TELAS[tela]));
+    window.scrollTo(0, 0);
+  };
+  const alimentoSelecionado = () => estado.alimentos.find(a => a.id === $("#item-select").value);
+  const fecharModal = () => $("#action-modal").classList.remove("active");
 
-        // Funções Auxiliares de Cálculo
-        function calculateMealTotals(foods) {
-            return foods.reduce((acc, food) => {
-                acc.kcal += food.kcal;
-                acc.carb += food.carb;
-                acc.fat += food.fat;
-                acc.prot += food.prot;
-                return acc;
-            }, { kcal: 0, carb: 0, fat: 0, prot: 0 });
-        }
+  function mostrarErro(err) {
+    console.error(err);
+    const box = $("#erro");
+    box.textContent = `Erro do Firestore: ${err.code || err.message}. Confira se o banco foi criado e se as regras permitem leitura e escrita.`;
+    box.hidden = false;
+  }
 
-        function calculatePercentages(totals) {
-            const totalMacros = totals.carb + totals.fat + totals.prot;
-            if (totalMacros === 0) return { carb: 0, fat: 0, prot: 0 };
-            return {
-                carb: (totals.carb / totalMacros) * 100,
-                fat: (totals.fat / totalMacros) * 100,
-                prot: (totals.prot / totalMacros) * 100
-            };
-        }
+  // Campos do cadastro gerados a partir das listas acima
+  $("#macros-fields").innerHTML = MACROS.map(([k, nome, un]) => `
+    <div class="form-group">
+      <label>${nome}</label>
+      <div class="input-group">
+        <input class="input-control decimal-input" name="${k}" placeholder="0,000" inputmode="decimal">
+        <div class="fixed-unit">${un}</div>
+      </div>
+    </div>`).join("");
 
-        // Renderização da Tela de Dashboard
-        function renderDashboard() {
-            const container = document.getElementById("meals-container");
-            container.innerHTML = "";
+  $("#vitaminas-fields").innerHTML = VITAMINAS.map((nome, i) => `
+    <div class="form-group">
+      <label>${nome}</label>
+      <div class="input-group">
+        <input class="input-control decimal-input" name="vit${i}" placeholder="0,000" inputmode="decimal">
+        <select class="unit-select vit-unit" name="vit${i}Un"><option>mcg</option><option>g</option><option>%</option></select>
+      </div>
+      <div class="ref-group" hidden style="margin-top:.5rem">
+        <label style="font-size:.8rem">Valor de Referência (%)</label>
+        <input class="input-control decimal-input" name="vit${i}Ref" placeholder="0,000" inputmode="decimal">
+      </div>
+    </div>`).join("");
 
-            firestoreMock.meals.forEach(meal => {
-                const totals = calculateMealTotals(meal.foods);
-                const percents = calculatePercentages(totals);
-                const foodNames = meal.foods.map(f => f.name).join(", ");
+  $("#minerais-fields").innerHTML = MINERAIS.map(([nome, un], i) => `
+    <div class="form-group">
+      <label>${nome}</label>
+      <div class="input-group">
+        <input class="input-control decimal-input" name="min${i}" placeholder="0,000" inputmode="decimal">
+        <div class="fixed-unit">${un}</div>
+      </div>
+    </div>`).join("");
 
-                const card = document.createElement("div");
-                card.className = "meal-card";
-                
-                card.onclick = () => openMealDetails(meal.id);
+  // Dashboard de refeições
+  function renderDashboard() {
+    $("#meals-container").innerHTML = REFEICOES.map(r => {
+      const itens = estado.itens[r.id] || [];
+      const t = somar(itens);
+      const p = percentuais(t);
+      const nomes = itens.map(i => escapar(i.nome)).join(", ");
+      return `
+        <div class="meal-card" data-meal="${r.id}">
+          <div class="meal-icon">${r.icone}</div>
+          <div class="meal-content">
+            <div class="meal-title">${r.titulo}</div>
+            <div class="meal-desc">${nomes || "Nenhum alimento registrado"}</div>
+            <div class="meal-kcal">🔥 ${fmt(t.kcal)} kcal</div>
+            <div class="macros-bar">
+              <div style="width:${p.carb}%;background:var(--carb-color)"></div>
+              <div style="width:${p.fat}%;background:var(--fat-color)"></div>
+              <div style="width:${p.prot}%;background:var(--prot-color)"></div>
+            </div>
+            <div class="macros-text">
+              <span class="dot dot-carb">${fmt(p.carb)}%</span>
+              <span class="dot dot-fat">${fmt(p.fat)}%</span>
+              <span class="dot dot-prot">${fmt(p.prot)}%</span>
+            </div>
+          </div>
+          <button class="add-btn" data-add="${r.id}">+</button>
+        </div>`;
+    }).join("");
+  }
 
-                card.innerHTML = `
-                    <div class="meal-icon">${meal.icon}</div>
-                    <div class="meal-content">
-                        <div class="meal-title">${meal.title}</div>
-                        <div class="meal-desc">${foodNames || "Nenhum alimento registrado"}</div>
-                        <div class="meal-kcal">🔥 ${formatNumberPTBR(totals.kcal)} kcal</div>
-                        <div class="macros-bar">
-                            <div style="width: ${percents.carb}%; background-color: var(--carb-color);"></div>
-                            <div style="width: ${percents.fat}%; background-color: var(--fat-color);"></div>
-                            <div style="width: ${percents.prot}%; background-color: var(--prot-color);"></div>
-                        </div>
-                        <div class="macros-text">
-                            <span class="dot dot-carb">${formatNumberPTBR(percents.carb)}%</span>
-                            <span class="dot dot-fat">${formatNumberPTBR(percents.fat)}%</span>
-                            <span class="dot dot-prot">${formatNumberPTBR(percents.prot)}%</span>
-                        </div>
-                    </div>
-                    <button class="add-btn">+</button>
-                `;
+  // Detalhes da refeição
+  function abrirDetalhes(id) {
+    refeicaoAtual = id;
+    renderDetalhes();
+    ir("details");
+  }
 
-                const addBtn = card.querySelector(".add-btn");
-                addBtn.onclick = (e) => {
-                    e.stopPropagation(); 
-                    openActionModal(meal);
-                };
+  function renderDetalhes() {
+    const r = REFEICOES.find(x => x.id === refeicaoAtual);
+    const itens = estado.itens[refeicaoAtual] || [];
+    const t = somar(itens);
+    $("#detail-title").textContent = r.titulo;
+    $("#detail-kcal").textContent = `${fmt(t.kcal)} kcal`;
+    $("#detail-carb").textContent = `${fmt(t.carb)}g`;
+    $("#detail-fat").textContent = `${fmt(t.fat)}g`;
+    $("#detail-prot").textContent = `${fmt(t.prot)}g`;
+    $("#foods-container").innerHTML = itens.length
+      ? itens.map(i => `
+          <div class="food-list-item">
+            <div>
+              <div class="food-name">${escapar(i.nome)}</div>
+              <div class="food-macros">${fmt(i.quantidade)} ${i.unidade} • C: ${fmt(i.carb)}g | G: ${fmt(i.fat)}g | P: ${fmt(i.prot)}g</div>
+            </div>
+            <div style="font-weight:500">${fmt(i.kcal)} kcal</div>
+          </div>`).join("")
+      : `<p class="vazio">Nenhum alimento registrado nesta refeição.</p>`;
+  }
 
-                container.appendChild(card);
-            });
-        }
+  // Modal de ações da refeição
+  function abrirModal(id) {
+    refeicaoAtual = id;
+    $("#modal-title").textContent = REFEICOES.find(r => r.id === id).titulo;
+    $("#action-modal").classList.add("active");
+  }
 
-        // Navegação para Detalhes da Refeição
-        function openMealDetails(mealId) {
-            const meal = firestoreMock.meals.find(m => m.id === mealId);
-            if (!meal) return;
+  // Adicionar alimento já cadastrado a uma refeição
+  function abrirAdicionarItem() {
+    $("#item-title").textContent = `Adicionar em ${REFEICOES.find(r => r.id === refeicaoAtual).titulo}`;
+    $("#item-select").innerHTML = estado.alimentos.length
+      ? estado.alimentos.map(a => `<option value="${a.id}">${escapar(a.nome)} (${fmt(a.porcao)} ${a.unidade})</option>`).join("")
+      : `<option value="">Cadastre um alimento primeiro</option>`;
+    $("#item-form").reset();
+    atualizarResumo();
+    ir("item");
+  }
 
-            const totals = calculateMealTotals(meal.foods);
-            
-            document.getElementById("detail-title").textContent = meal.title;
-            document.getElementById("detail-kcal").textContent = `${formatNumberPTBR(totals.kcal)} kcal`;
-            document.getElementById("detail-carb").textContent = `${formatNumberPTBR(totals.carb)}g`;
-            document.getElementById("detail-fat").textContent = `${formatNumberPTBR(totals.fat)}g`;
-            document.getElementById("detail-prot").textContent = `${formatNumberPTBR(totals.prot)}g`;
+  function atualizarResumo() {
+    const a = alimentoSelecionado();
+    $("#item-unidade").textContent = a ? a.unidade : "g";
+    const qtd = parseInputPTBR($("#item-qtd").value);
+    if (!a || !(a.porcao > 0) || !(qtd > 0)) {
+      $("#item-preview").textContent = "";
+      return;
+    }
+    const c = calcularItem(a, qtd);
+    $("#item-preview").textContent = `${fmt(c.kcal)} kcal • C: ${fmt(c.carb)}g | G: ${fmt(c.fat)}g | P: ${fmt(c.prot)}g`;
+  }
 
-            const foodsContainer = document.getElementById("foods-container");
-            foodsContainer.innerHTML = "";
+  async function salvarItem(e) {
+    e.preventDefault();
+    const a = alimentoSelecionado();
+    const qtd = parseInputPTBR($("#item-qtd").value);
+    if (!a || !(a.porcao > 0) || !(qtd > 0)) return alert("Escolha um alimento e informe a quantidade.");
+    const c = calcularItem(a, qtd);
+    try {
+      await addDoc(collection(db, "dieta_refeicoes", refeicaoAtual, "itens"), {
+        nome: a.nome, alimentoId: a.id, quantidade: qtd, unidade: a.unidade,
+        kcal: c.kcal, carb: c.carb, fat: c.fat, prot: c.prot, criadoEm: Date.now()
+      });
+      abrirDetalhes(refeicaoAtual);
+    } catch (err) {
+      console.error(err);
+      alert(`Não foi possível salvar: ${err.code || err.message}`);
+    }
+  }
 
-            if (meal.foods.length === 0) {
-                foodsContainer.innerHTML = `<p style="color: var(--text-sec); text-align: center; margin-top: 2rem;">Nenhum alimento registrado nesta refeição.</p>`;
-            } else {
-                meal.foods.forEach(food => {
-                    foodsContainer.innerHTML += `
-                        <div class="food-list-item">
-                            <div>
-                                <div class="food-name">${food.name}</div>
-                                <div class="food-macros">${food.amount} • C: ${formatNumberPTBR(food.carb)}g | G: ${formatNumberPTBR(food.fat)}g | P: ${formatNumberPTBR(food.prot)}g</div>
-                            </div>
-                            <div style="font-weight: 500;">${formatNumberPTBR(food.kcal)} kcal</div>
-                        </div>
-                    `;
-                });
-            }
+  // Cadastro de alimento (catálogo)
+  function abrirCadastro() {
+    $("#food-form").reset();
+    document.querySelectorAll(".ref-group").forEach(g => (g.hidden = true));
+    ir("food");
+  }
 
-            document.getElementById("dashboard-screen").classList.remove("active");
-            document.getElementById("details-screen").classList.add("active");
-        }
+  async function salvarAlimento(e) {
+    e.preventDefault();
+    const f = e.target;
+    const num = name => parseInputPTBR(f.elements[name].value);
+    const porcao = num("porcao");
+    if (!(porcao > 0)) return alert("A porção precisa ser maior que zero.");
+    const dados = {
+      nome: f.elements.nome.value.trim(),
+      porcao,
+      unidade: f.elements.porcaoUnidade.value,
+      kcal: num("kcal"),
+      nutrientes: Object.fromEntries(MACROS.map(([k]) => [k, num(k)])),
+      vitaminas: VITAMINAS.map((nome, i) => ({ nome, valor: num(`vit${i}`), unidade: f.elements[`vit${i}Un`].value, ref: num(`vit${i}Ref`) })),
+      minerais: MINERAIS.map(([nome, unidade], i) => ({ nome, valor: num(`min${i}`), unidade })),
+      criadoEm: Date.now()
+    };
+    try {
+      await addDoc(collection(db, "dieta_alimentos"), dados);
+      alert("Alimento salvo com sucesso!");
+      ir("dashboard");
+    } catch (err) {
+      console.error(err);
+      alert(`Não foi possível salvar: ${err.code || err.message}`);
+    }
+  }
 
-        function goBackToDashboard() {
-            document.getElementById("details-screen").classList.remove("active");
-            document.getElementById("dashboard-screen").classList.add("active");
-        }
+  // Máscara PT-BR: milhar com ponto, até 3 casas decimais
+  function mascaraDecimal(e) {
+    const el = e.target;
+    if (!el.classList.contains("decimal-input")) return;
+    let partes = el.value.replace(/[^0-9,]/g, "").split(",");
+    if (partes.length > 2) partes = [partes[0], partes.slice(1).join("")];
+    if (partes.length === 2) partes[1] = partes[1].slice(0, 3);
+    const inteira = partes[0] === ""
+      ? (partes.length === 2 ? "0" : "")
+      : parseInt(partes[0], 10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    el.value = partes.length === 2 ? `${inteira},${partes[1]}` : inteira;
+    if (el.id === "item-qtd") atualizarResumo();
+  }
 
-        // Lógica do Modal
-        function openActionModal(meal) {
-            document.getElementById("modal-title").textContent = meal.title;
-            document.getElementById("action-modal").classList.add("active");
-        }
+  // Eventos
+  document.addEventListener("click", e => {
+    const btn = e.target.closest("[data-go]");
+    if (btn) ir(btn.dataset.go);
+  });
 
-        function closeModal(event) {
-            if (event.target.id === "action-modal") {
-                document.getElementById("action-modal").classList.remove("active");
-            }
-        }
+  $("#meals-container").addEventListener("click", e => {
+    const add = e.target.closest("[data-add]");
+    if (add) return abrirModal(add.dataset.add);
+    const card = e.target.closest("[data-meal]");
+    if (card) abrirDetalhes(card.dataset.meal);
+  });
 
-        function forceCloseModal() {
-            document.getElementById("action-modal").classList.remove("active");
-        }
+  $("#action-modal").addEventListener("click", e => { if (e.target.id === "action-modal") fecharModal(); });
+  $("#btn-add-item").addEventListener("click", () => { fecharModal(); abrirAdicionarItem(); });
+  $("#btn-new-food").addEventListener("click", () => { fecharModal(); abrirCadastro(); });
+  $("#item-select").addEventListener("change", atualizarResumo);
+  $("#item-form").addEventListener("submit", salvarItem);
+  $("#food-form").addEventListener("submit", salvarAlimento);
+  document.addEventListener("input", mascaraDecimal);
 
-        function handleEdit() {
-            alert("Redirecionando para edição de alimentos do Firestore...");
-            forceCloseModal();
-        }
+  document.addEventListener("change", e => {
+    if (!e.target.classList.contains("vit-unit")) return;
+    const grupo = e.target.closest(".form-group").querySelector(".ref-group");
+    grupo.hidden = e.target.value !== "%";
+    if (grupo.hidden) grupo.querySelector("input").value = "";
+  });
 
-        // Navegação para a Tela de Cadastro
-        function handleAdd() {
-            forceCloseModal();
-            document.getElementById("dashboard-screen").classList.remove("active");
-            document.getElementById("add-food-screen").classList.add("active");
-        }
+  // Firestore: leitura em tempo real
+  onSnapshot(query(collection(db, "dieta_alimentos"), orderBy("nome")),
+    snap => { estado.alimentos = snap.docs.map(d => ({ id: d.id, ...d.data() })); },
+    mostrarErro);
 
-        function goBackFromAddFood() {
-            document.getElementById("add-food-form").reset();
-            document.querySelectorAll(".ref-group").forEach(el => el.style.display = "none");
-            document.getElementById("add-food-screen").classList.remove("active");
-            document.getElementById("dashboard-screen").classList.add("active");
-        }
+  REFEICOES.forEach(r => {
+    onSnapshot(query(collection(db, "dieta_refeicoes", r.id, "itens"), orderBy("criadoEm")),
+      snap => {
+        estado.itens[r.id] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderDashboard();
+        if (refeicaoAtual === r.id) renderDetalhes();
+      },
+      mostrarErro);
+  });
 
-        // Lógica condicional de Vitaminas (%)
-        function toggleRef(selectElement) {
-            const refGroup = selectElement.parentElement.nextElementSibling;
-            if (selectElement.value === '%') {
-                refGroup.style.display = 'block';
-            } else {
-                refGroup.style.display = 'none';
-                refGroup.querySelector("input").value = ""; 
-            }
-        }
-
-        // Máscara rígida de Formatação Numérica (Padrão PT-BR)
-        document.addEventListener("input", function(e) {
-            if (e.target.classList.contains("decimal-input")) {
-                let val = e.target.value;
-                
-                val = val.replace(/[^0-9,]/g, '');
-                let parts = val.split(',');
-                
-                if (parts.length > 2) {
-                    val = parts[0] + ',' + parts.slice(1).join('');
-                    parts = val.split(',');
-                }
-                
-                if (parts.length === 2 && parts[1].length > 3) {
-                    parts[1] = parts[1].substring(0, 3);
-                }
-                
-                let intPart = parts[0];
-                if (intPart !== "") {
-                    intPart = parseInt(intPart, 10).toString();
-                    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-                } else if (parts.length === 2) {
-                    intPart = "0";
-                }
-                
-                if (parts.length === 2) {
-                    e.target.value = intPart + ',' + parts[1];
-                } else {
-                    e.target.value = intPart;
-                }
-            }
-        });
-
-        // Inicialização
-        document.addEventListener("DOMContentLoaded", () => {
-            renderDashboard();
-        });
-    </script>
+  renderDashboard();
+</script>
 </body>
 </html>
