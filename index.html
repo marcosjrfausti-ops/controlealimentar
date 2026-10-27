@@ -46,6 +46,7 @@
             display: none;
             padding: 1.5rem;
             animation: fadeIn 0.3s ease;
+            padding-bottom: 3rem; /* Espaço para rolagem extra */
         }
 
         .screen.active {
@@ -282,6 +283,101 @@
             margin-top: 0.3rem;
         }
 
+        /* FORM STYLES (NOVO CADASTRO) */
+        .form-section {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-sec);
+            margin-bottom: 0.5rem;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .input-control {
+            flex-grow: 1;
+            width: 100%;
+            background-color: #2c2c2e;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.8rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .input-control:focus {
+            border-color: var(--accent);
+        }
+        
+        .fixed-unit {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--icon-bg);
+            padding: 0 1rem;
+            border-radius: 8px;
+            color: var(--text-sec);
+            font-size: 0.9rem;
+            min-width: 60px;
+        }
+        
+        .unit-select {
+            background-color: #2c2c2e;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.8rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .unit-select:focus {
+            border-color: var(--accent);
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 1.2rem;
+            background-color: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: background-color 0.2s;
+        }
+
+        .save-btn:hover {
+            background-color: #a46cf5;
+        }
+
         /* MODAL */
         .modal-overlay {
             position: fixed;
@@ -389,6 +485,293 @@
             <div id="foods-container">
                 <!-- Renderizado via JS -->
             </div>
+        </div>
+
+        <!-- TELA 3: CADASTRAR ALIMENTOS -->
+        <div id="add-food-screen" class="screen">
+            <div class="header">
+                <button class="icon-btn" onclick="goBackFromAddFood()">&#10094;</button>
+                <h2>Cadastrar Alimento</h2>
+            </div>
+
+            <form id="add-food-form" onsubmit="event.preventDefault(); alert('Alimento salvo com sucesso!'); goBackFromAddFood();">
+                
+                <!-- Informação Básica -->
+                <div class="form-section">
+                    <div class="form-section-title">📝 Informação Nutricional</div>
+                    <div class="form-group">
+                        <label>Nome</label>
+                        <input type="text" class="input-control" placeholder="Ex: Arroz Branco" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Porção</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal" required>
+                            <select class="unit-select">
+                                <option value="g">g</option>
+                                <option value="un">un</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Valor energético</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal" required>
+                            <div class="fixed-unit">kcal</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Macronutrientes -->
+                <div class="form-section">
+                    <div class="form-section-title">🍞 Macronutrientes</div>
+                    <div class="form-group">
+                        <label>Carboidratos totais</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">g</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Açúcares totais</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">g</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Açúcares adicionados</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">g</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Proteínas</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">g</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Gorduras totais</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">g</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Gorduras saturadas</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">g</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Gorduras trans</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">g</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Fibra alimentar</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">g</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Sódio</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">mg</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vitaminas -->
+                <div class="form-section">
+                    <div class="form-section-title">💊 Micronutrientes (Vitaminas)</div>
+                    
+                    <div class="form-group">
+                        <label>Vitamina A</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vitamina B2 (Riboflavina)</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vitamina B5 (Ácido Pantotênico)</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vitamina B9 (Ácido Fólico)</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vitamina B12 (Cobalamina)</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vitamina C</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vitamina D</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vitamina E</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Minerais Essenciais -->
+                <div class="form-section">
+                    <div class="form-section-title">🪨 Micronutrientes (Minerais)</div>
+                    <div class="form-group">
+                        <label>Cálcio</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">mg</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Ferro</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">mg</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Zinco</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">mg</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Fósforo</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">mg</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Selênio</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">mcg</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Potássio</label>
+                        <div class="input-group">
+                            <input type="text" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">mg</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="save-btn">Salvar Alimento</button>
+            </form>
         </div>
     </div>
 
@@ -581,10 +964,55 @@
             forceCloseModal();
         }
 
+        // Navegação para a Tela de Cadastro
         function handleAdd() {
-            alert("Redirecionando para busca/cadastro de novos alimentos...");
             forceCloseModal();
+            document.getElementById("dashboard-screen").classList.remove("active");
+            document.getElementById("add-food-screen").classList.add("active");
         }
+
+        function goBackFromAddFood() {
+            // Reseta o form
+            document.getElementById("add-food-form").reset();
+            
+            // Esconde todas as caixas de referência de vitaminas abertas
+            document.querySelectorAll(".ref-group").forEach(el => el.style.display = "none");
+
+            document.getElementById("add-food-screen").classList.remove("active");
+            document.getElementById("dashboard-screen").classList.add("active");
+        }
+
+        // Lógica condicional de Vitaminas (%)
+        function toggleRef(selectElement) {
+            const refGroup = selectElement.parentElement.nextElementSibling;
+            if (selectElement.value === '%') {
+                refGroup.style.display = 'block';
+            } else {
+                refGroup.style.display = 'none';
+                refGroup.querySelector("input").value = ""; // limpa valor ao esconder
+            }
+        }
+
+        // Formatação de casas decimais (0,000)
+        document.addEventListener("input", function(e) {
+            if (e.target.classList.contains("decimal-input")) {
+                let val = e.target.value;
+                // Remove qualquer coisa que não seja número ou vírgula
+                val = val.replace(/[^0-9,]/g, '');
+                
+                let parts = val.split(',');
+                // Previne mais de uma vírgula
+                if (parts.length > 2) {
+                    val = parts[0] + ',' + parts.slice(1).join('');
+                }
+                // Limita a 3 casas decimais
+                if (parts.length === 2 && parts[1].length > 3) {
+                    val = parts[0] + ',' + parts[1].substring(0, 3);
+                }
+                
+                e.target.value = val;
+            }
+        });
 
         // Inicialização
         document.addEventListener("DOMContentLoaded", () => {
