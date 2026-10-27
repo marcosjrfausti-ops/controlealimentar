@@ -377,6 +377,12 @@
         .save-btn:hover {
             background-color: #a46cf5;
         }
+        
+        .save-btn:disabled {
+            background-color: #5a4b75;
+            cursor: not-allowed;
+            color: #999;
+        }
 
         /* MODAL */
         .modal-overlay {
@@ -434,6 +440,10 @@
             background-color: #a46cf5;
         }
     </style>
+    
+    <!-- FIREBASE SDK COMPAT -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -494,7 +504,8 @@
                 <h2>Cadastrar Alimento</h2>
             </div>
 
-            <form id="add-food-form">
+            <!-- Formulário atualizado com ONSUBMIT apontando para a função do Firestore -->
+            <form id="add-food-form" onsubmit="saveFoodToFirestore(event)">
                 
                 <!-- Informação Básica -->
                 <div class="form-section">
@@ -507,7 +518,7 @@
                         <label>Porção</label>
                         <div class="input-group">
                             <input type="text" id="food-portion" class="input-control decimal-input" placeholder="0,000" inputmode="decimal" required>
-                            <select id="food-portion-unit" class="unit-select">
+                            <select id="food-unit" class="unit-select">
                                 <option value="g">g</option>
                                 <option value="un">un</option>
                             </select>
@@ -542,7 +553,7 @@
                     <div class="form-group">
                         <label>Açúcares adicionados</label>
                         <div class="input-group">
-                            <input type="text" id="food-added-sugar" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <input type="text" id="food-addedsugar" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
                             <div class="fixed-unit">g</div>
                         </div>
                     </div>
@@ -563,14 +574,14 @@
                     <div class="form-group">
                         <label>Gorduras saturadas</label>
                         <div class="input-group">
-                            <input type="text" id="food-sat-fat" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <input type="text" id="food-satfat" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
                             <div class="fixed-unit">g</div>
                         </div>
                     </div>
                     <div class="form-group">
                         <label>Gorduras trans</label>
                         <div class="input-group">
-                            <input type="text" id="food-trans-fat" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <input type="text" id="food-transfat" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
                             <div class="fixed-unit">g</div>
                         </div>
                     </div>
@@ -590,15 +601,15 @@
                     </div>
                 </div>
 
-                <!-- Vitaminas (Exemplo reduzido para o script, mas os IDs seguem o padrão) -->
+                <!-- Vitaminas -->
                 <div class="form-section">
                     <div class="form-section-title">💊 Micronutrientes (Vitaminas)</div>
                     
                     <div class="form-group">
                         <label>Vitamina A</label>
                         <div class="input-group">
-                            <input type="text" id="food-vit-a" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
-                            <select id="food-vit-a-unit" class="unit-select" onchange="toggleRef(this)">
+                            <input type="text" id="vit-a" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select id="vit-a-unit" class="unit-select" onchange="toggleRef(this)">
                                 <option value="mcg">mcg</option>
                                 <option value="g">g</option>
                                 <option value="%">%</option>
@@ -606,10 +617,168 @@
                         </div>
                         <div class="ref-group" style="display: none; margin-top: 0.5rem;">
                             <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
-                            <input type="text" id="food-vit-a-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <input type="text" id="vit-a-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
                         </div>
                     </div>
-                    <!-- (Pode replicar as demais vitaminas adicionando os respectivos IDs como id="food-vit-c", id="food-vit-c-unit", etc) -->
+
+                    <div class="form-group">
+                        <label>Vitamina B2 (Riboflavina)</label>
+                        <div class="input-group">
+                            <input type="text" id="vit-b2" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select id="vit-b2-unit" class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" id="vit-b2-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vitamina B5 (Ácido Pantotênico)</label>
+                        <div class="input-group">
+                            <input type="text" id="vit-b5" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select id="vit-b5-unit" class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" id="vit-b5-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vitamina B9 (Ácido Fólico)</label>
+                        <div class="input-group">
+                            <input type="text" id="vit-b9" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select id="vit-b9-unit" class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" id="vit-b9-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vitamina B12 (Cobalamina)</label>
+                        <div class="input-group">
+                            <input type="text" id="vit-b12" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select id="vit-b12-unit" class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" id="vit-b12-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vitamina C</label>
+                        <div class="input-group">
+                            <input type="text" id="vit-c" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select id="vit-c-unit" class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" id="vit-c-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vitamina D</label>
+                        <div class="input-group">
+                            <input type="text" id="vit-d" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select id="vit-d-unit" class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" id="vit-d-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vitamina E</label>
+                        <div class="input-group">
+                            <input type="text" id="vit-e" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <select id="vit-e-unit" class="unit-select" onchange="toggleRef(this)">
+                                <option value="mcg">mcg</option>
+                                <option value="g">g</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                        <div class="ref-group" style="display: none; margin-top: 0.5rem;">
+                            <label style="font-size: 0.8rem;">Valor de Referência (%)</label>
+                            <input type="text" id="vit-e-ref" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Minerais Essenciais -->
+                <div class="form-section">
+                    <div class="form-section-title">🪨 Micronutrientes (Minerais)</div>
+                    <div class="form-group">
+                        <label>Cálcio</label>
+                        <div class="input-group">
+                            <input type="text" id="min-calcium" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">mg</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Ferro</label>
+                        <div class="input-group">
+                            <input type="text" id="min-iron" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">mg</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Zinco</label>
+                        <div class="input-group">
+                            <input type="text" id="min-zinc" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">mg</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Fósforo</label>
+                        <div class="input-group">
+                            <input type="text" id="min-phosphorus" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">mg</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Selênio</label>
+                        <div class="input-group">
+                            <input type="text" id="min-selenium" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">mcg</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Potássio</label>
+                        <div class="input-group">
+                            <input type="text" id="min-potassium" class="input-control decimal-input" placeholder="0,000" inputmode="decimal">
+                            <div class="fixed-unit">mg</div>
+                        </div>
+                    </div>
                 </div>
 
                 <button type="submit" class="save-btn">Salvar Alimento</button>
@@ -626,12 +795,8 @@
         </div>
     </div>
 
-    <!-- IMPORTANDO O SDK DO FIREBASE COMO MÓDULO VIA CDN -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // Configuração do Firebase do seu projeto 'CONTROLE-ALIMENTAR'
+    <script>
+        // INICIALIZAÇÃO FIREBASE (Usando credenciais das imagens)
         const firebaseConfig = {
             apiKey: "AIzaSyBLTPfj097saA-VrtxqWCLWDdS5acjgbEs",
             authDomain: "os-coretiva-preventiva.firebaseapp.com",
@@ -641,13 +806,10 @@
             appId: "1:1074947472672:web:c797327b7c398fa94b2b45",
             measurementId: "G-H01XP1X013"
         };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        // Inicializa o Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        // --- FUNÇÕES DE LÓGICA DO APP ---
-
+        // Formatação PT-BR de números
         function formatNumberPTBR(num) {
             if (num === undefined || num === null || isNaN(num)) return "0";
             return new Intl.NumberFormat('pt-BR', {
@@ -656,7 +818,7 @@
             }).format(num);
         }
 
-        // Converte string pt-BR para Float numérico que vai pro banco de dados
+        // Converter strings PT-BR para Float
         function parseInputPTBR(str) {
             if (!str) return 0;
             const cleanStr = str.replace(/\./g, '').replace(',', '.');
@@ -664,53 +826,107 @@
             return isNaN(val) ? 0 : val;
         }
 
-        // Mock temporário para exibição das refeições
+        // Função para salvar no FIRESTORE
+        function saveFoodToFirestore(event) {
+            event.preventDefault();
+            
+            const btn = document.querySelector('.save-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "Salvando...";
+            btn.disabled = true;
+
+            const foodData = {
+                nome: document.getElementById('food-name').value,
+                porcao_valor: parseInputPTBR(document.getElementById('food-portion').value),
+                porcao_unidade: document.getElementById('food-unit').value,
+                kcal: parseInputPTBR(document.getElementById('food-kcal').value),
+                macros: {
+                    carboidratos: parseInputPTBR(document.getElementById('food-carb').value),
+                    acucares_totais: parseInputPTBR(document.getElementById('food-sugar').value),
+                    acucares_adicionados: parseInputPTBR(document.getElementById('food-addedsugar').value),
+                    proteinas: parseInputPTBR(document.getElementById('food-prot').value),
+                    gorduras_totais: parseInputPTBR(document.getElementById('food-fat').value),
+                    gorduras_saturadas: parseInputPTBR(document.getElementById('food-satfat').value),
+                    gorduras_trans: parseInputPTBR(document.getElementById('food-transfat').value),
+                    fibra_alimentar: parseInputPTBR(document.getElementById('food-fiber').value),
+                    sodio_mg: parseInputPTBR(document.getElementById('food-sodium').value)
+                },
+                criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            db.collection("alimentos").add(foodData)
+                .then((docRef) => {
+                    alert('Alimento salvo com sucesso na nuvem!');
+                    goBackFromAddFood();
+                })
+                .catch((error) => {
+                    console.error("Erro ao adicionar documento: ", error);
+                    alert("Erro ao salvar alimento. Verifique sua conexão e permissões do banco de dados.");
+                })
+                .finally(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                });
+        }
+
+        // 1. ESTRUTURA DE DADOS MOCK (Mantido para renderizar a dashboard base enquanto você não puxa o getDocs do Firebase)
         const firestoreMock = {
             meals: [
-                { id: "meal_1", title: "Café da manhã", icon: "🌅", foods: [ { name: "Ovo Mexido", amount: "100g", kcal: 398.5, carb: 4.2, fat: 70.4, prot: 26 } ] },
-                { id: "meal_2", title: "Almoço", icon: "☀️", foods: [ { name: "Albumina (Naturovos)", amount: "2 scoops", kcal: 110, carb: 2.45, fat: 0.4, prot: 24.8 } ] },
-                { id: "meal_3", title: "Jantar", icon: "🌙", foods: [ { name: "Arroz Premium", amount: "150g", kcal: 195, carb: 42, fat: 0, prot: 4 } ] },
-                { id: "meal_4", title: "Lanches", icon: "🌤️", foods: [] }
+                {
+                    id: "meal_1",
+                    title: "Café da manhã",
+                    icon: "🌅",
+                    foods: [
+                        { name: "Ovo Mexido", amount: "100g", kcal: 398.5, carb: 4.2, fat: 70.4, prot: 26 }
+                    ]
+                },
+                {
+                    id: "meal_2",
+                    title: "Almoço",
+                    icon: "☀️",
+                    foods: [
+                        { name: "Albumina (Naturovos)", amount: "2 scoops", kcal: 110, carb: 2.45, fat: 0.4, prot: 24.8 },
+                        { name: "Creatina", amount: "5g", kcal: 0, carb: 0, fat: 0, prot: 0 },
+                        { name: "Suco de Pêssego", amount: "200ml", kcal: 80, carb: 20, fat: 0, prot: 0 },
+                        { name: "Coxinha de Frango", amount: "1 unidade", kcal: 901.125, carb: 48, fat: 29.5, prot: 23 }
+                    ]
+                },
+                {
+                    id: "meal_3",
+                    title: "Jantar",
+                    icon: "🌙",
+                    foods: [
+                        { name: "Arroz Premium", amount: "150g", kcal: 195, carb: 42, fat: 0, prot: 4 },
+                        { name: "Sardinhas com Óleo", amount: "1 lata", kcal: 140, carb: 0, fat: 32, prot: 22 }
+                    ]
+                },
+                {
+                    id: "meal_4",
+                    title: "Lanches",
+                    icon: "🌤️",
+                    foods: []
+                }
             ]
         };
 
-        // --- NAVEGAÇÃO (atreladas ao window pois estamos em um script type="module") ---
-        window.startApp = () => {
+        // Navegação
+        function startApp() {
             document.getElementById("home-screen").classList.remove("active");
             document.getElementById("dashboard-screen").classList.add("active");
-        };
+        }
 
-        window.goHome = () => {
+        function goHome() {
             document.getElementById("dashboard-screen").classList.remove("active");
             document.getElementById("home-screen").classList.add("active");
-        };
+        }
 
-        window.goBackToDashboard = () => {
-            document.getElementById("details-screen").classList.remove("active");
-            document.getElementById("dashboard-screen").classList.add("active");
-        };
-
-        window.goBackFromAddFood = () => {
-            document.getElementById("add-food-form").reset();
-            document.querySelectorAll(".ref-group").forEach(el => el.style.display = "none");
-            document.getElementById("add-food-screen").classList.remove("active");
-            document.getElementById("dashboard-screen").classList.add("active");
-        };
-
-        window.toggleRef = (selectElement) => {
-            const refGroup = selectElement.parentElement.nextElementSibling;
-            if (selectElement.value === '%') {
-                refGroup.style.display = 'block';
-            } else {
-                refGroup.style.display = 'none';
-                refGroup.querySelector("input").value = ""; 
-            }
-        };
-
-        // --- CÁLCULOS E RENDERIZAÇÃO DO DASHBOARD ---
+        // Funções Auxiliares de Cálculo
         function calculateMealTotals(foods) {
             return foods.reduce((acc, food) => {
-                acc.kcal += food.kcal; acc.carb += food.carb; acc.fat += food.fat; acc.prot += food.prot;
+                acc.kcal += food.kcal;
+                acc.carb += food.carb;
+                acc.fat += food.fat;
+                acc.prot += food.prot;
                 return acc;
             }, { kcal: 0, carb: 0, fat: 0, prot: 0 });
         }
@@ -725,9 +941,56 @@
             };
         }
 
-        window.openMealDetails = (mealId) => {
+        // Renderização da Tela de Dashboard
+        function renderDashboard() {
+            const container = document.getElementById("meals-container");
+            container.innerHTML = "";
+
+            firestoreMock.meals.forEach(meal => {
+                const totals = calculateMealTotals(meal.foods);
+                const percents = calculatePercentages(totals);
+                const foodNames = meal.foods.map(f => f.name).join(", ");
+
+                const card = document.createElement("div");
+                card.className = "meal-card";
+                
+                card.onclick = () => openMealDetails(meal.id);
+
+                card.innerHTML = `
+                    <div class="meal-icon">${meal.icon}</div>
+                    <div class="meal-content">
+                        <div class="meal-title">${meal.title}</div>
+                        <div class="meal-desc">${foodNames || "Nenhum alimento registrado"}</div>
+                        <div class="meal-kcal">🔥 ${formatNumberPTBR(totals.kcal)} kcal</div>
+                        <div class="macros-bar">
+                            <div style="width: ${percents.carb}%; background-color: var(--carb-color);"></div>
+                            <div style="width: ${percents.fat}%; background-color: var(--fat-color);"></div>
+                            <div style="width: ${percents.prot}%; background-color: var(--prot-color);"></div>
+                        </div>
+                        <div class="macros-text">
+                            <span class="dot dot-carb">${formatNumberPTBR(percents.carb)}%</span>
+                            <span class="dot dot-fat">${formatNumberPTBR(percents.fat)}%</span>
+                            <span class="dot dot-prot">${formatNumberPTBR(percents.prot)}%</span>
+                        </div>
+                    </div>
+                    <button class="add-btn">+</button>
+                `;
+
+                const addBtn = card.querySelector(".add-btn");
+                addBtn.onclick = (e) => {
+                    e.stopPropagation(); 
+                    openActionModal(meal);
+                };
+
+                container.appendChild(card);
+            });
+        }
+
+        // Navegação para Detalhes da Refeição
+        function openMealDetails(mealId) {
             const meal = firestoreMock.meals.find(m => m.id === mealId);
             if (!meal) return;
+
             const totals = calculateMealTotals(meal.foods);
             
             document.getElementById("detail-title").textContent = meal.title;
@@ -754,140 +1017,67 @@
                     `;
                 });
             }
+
             document.getElementById("dashboard-screen").classList.remove("active");
             document.getElementById("details-screen").classList.add("active");
-        };
-
-        function renderDashboard() {
-            const container = document.getElementById("meals-container");
-            container.innerHTML = "";
-
-            firestoreMock.meals.forEach(meal => {
-                const totals = calculateMealTotals(meal.foods);
-                const percents = calculatePercentages(totals);
-                const foodNames = meal.foods.map(f => f.name).join(", ");
-
-                const card = document.createElement("div");
-                card.className = "meal-card";
-                card.onclick = () => window.openMealDetails(meal.id);
-                
-                card.innerHTML = `
-                    <div class="meal-icon">${meal.icon}</div>
-                    <div class="meal-content">
-                        <div class="meal-title">${meal.title}</div>
-                        <div class="meal-desc">${foodNames || "Nenhum alimento registrado"}</div>
-                        <div class="meal-kcal">🔥 ${formatNumberPTBR(totals.kcal)} kcal</div>
-                        <div class="macros-bar">
-                            <div style="width: ${percents.carb}%; background-color: var(--carb-color);"></div>
-                            <div style="width: ${percents.fat}%; background-color: var(--fat-color);"></div>
-                            <div style="width: ${percents.prot}%; background-color: var(--prot-color);"></div>
-                        </div>
-                        <div class="macros-text">
-                            <span class="dot dot-carb">${formatNumberPTBR(percents.carb)}%</span>
-                            <span class="dot dot-fat">${formatNumberPTBR(percents.fat)}%</span>
-                            <span class="dot dot-prot">${formatNumberPTBR(percents.prot)}%</span>
-                        </div>
-                    </div>
-                    <button class="add-btn">+</button>
-                `;
-
-                const addBtn = card.querySelector(".add-btn");
-                addBtn.onclick = (e) => {
-                    e.stopPropagation(); 
-                    window.openActionModal(meal);
-                };
-                container.appendChild(card);
-            });
         }
 
-        // --- LÓGICA DO MODAL ---
-        window.openActionModal = (meal) => {
+        function goBackToDashboard() {
+            document.getElementById("details-screen").classList.remove("active");
+            document.getElementById("dashboard-screen").classList.add("active");
+        }
+
+        // Lógica do Modal
+        function openActionModal(meal) {
             document.getElementById("modal-title").textContent = meal.title;
             document.getElementById("action-modal").classList.add("active");
-        };
+        }
 
-        window.closeModal = (event) => {
+        function closeModal(event) {
             if (event.target.id === "action-modal") {
                 document.getElementById("action-modal").classList.remove("active");
             }
-        };
+        }
 
-        window.forceCloseModal = () => {
+        function forceCloseModal() {
             document.getElementById("action-modal").classList.remove("active");
-        };
+        }
 
-        window.handleEdit = () => {
+        function handleEdit() {
             alert("Redirecionando para edição de alimentos do Firestore...");
-            window.forceCloseModal();
-        };
+            forceCloseModal();
+        }
 
-        window.handleAdd = () => {
-            window.forceCloseModal();
+        // Navegação para a Tela de Cadastro
+        function handleAdd() {
+            forceCloseModal();
             document.getElementById("dashboard-screen").classList.remove("active");
             document.getElementById("add-food-screen").classList.add("active");
-        };
+        }
 
-        // --- SALVANDO DADOS NO FIRESTORE ---
-        document.getElementById("add-food-form").addEventListener("submit", async (event) => {
-            event.preventDefault();
-            
-            // Alterar o texto do botão durante o carregamento
-            const submitBtn = event.target.querySelector(".save-btn");
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = "Salvando...";
-            submitBtn.disabled = true;
+        function goBackFromAddFood() {
+            document.getElementById("add-food-form").reset();
+            document.querySelectorAll(".ref-group").forEach(el => el.style.display = "none");
+            document.getElementById("add-food-screen").classList.remove("active");
+            document.getElementById("dashboard-screen").classList.add("active");
+        }
 
-            try {
-                // Monta o objeto com os dados exatos digitados no formulário
-                const foodData = {
-                    name: document.getElementById("food-name").value,
-                    portionValue: parseInputPTBR(document.getElementById("food-portion").value),
-                    portionUnit: document.getElementById("food-portion-unit").value,
-                    kcal: parseInputPTBR(document.getElementById("food-kcal").value),
-                    
-                    macros: {
-                        carb: parseInputPTBR(document.getElementById("food-carb").value),
-                        sugar: parseInputPTBR(document.getElementById("food-sugar").value),
-                        addedSugar: parseInputPTBR(document.getElementById("food-added-sugar").value),
-                        prot: parseInputPTBR(document.getElementById("food-prot").value),
-                        fat: parseInputPTBR(document.getElementById("food-fat").value),
-                        satFat: parseInputPTBR(document.getElementById("food-sat-fat").value),
-                        transFat: parseInputPTBR(document.getElementById("food-trans-fat").value),
-                        fiber: parseInputPTBR(document.getElementById("food-fiber").value),
-                        sodium: parseInputPTBR(document.getElementById("food-sodium").value)
-                    },
-                    
-                    vitamins: {
-                        vitaminA: {
-                            value: parseInputPTBR(document.getElementById("food-vit-a").value),
-                            unit: document.getElementById("food-vit-a-unit").value,
-                            refPercentage: parseInputPTBR(document.getElementById("food-vit-a-ref").value)
-                        }
-                        // Adicionar mapeamento das outras vitaminas e minerais conforme você for recriando os inputs
-                    },
-                    createdAt: new Date()
-                };
-
-                // Enviando para a Coleção "alimentos" no Firestore
-                const docRef = await addDoc(collection(db, "alimentos"), foodData);
-                console.log("Documento gravado com ID: ", docRef.id);
-                
-                alert("Alimento salvo com sucesso no banco de dados!");
-                window.goBackFromAddFood();
-
-            } catch (error) {
-                console.error("Erro ao adicionar documento: ", error);
-                alert("Ocorreu um erro ao salvar o alimento. Verifique o console.");
-            } finally {
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
+        // Lógica condicional de Vitaminas (%)
+        function toggleRef(selectElement) {
+            const refGroup = selectElement.parentElement.nextElementSibling;
+            if (selectElement.value === '%') {
+                refGroup.style.display = 'block';
+            } else {
+                refGroup.style.display = 'none';
+                refGroup.querySelector("input").value = ""; 
             }
-        });
+        }
 
-        // --- MÁSCARA PT-BR DE FORMATAÇÃO NUMÉRICA ---
+        // Máscara rígida de Formatação Numérica (Padrão PT-BR)
         document.addEventListener("input", function(e) {
             if (e.target.classList.contains("decimal-input")) {
                 let val = e.target.value;
+                
                 val = val.replace(/[^0-9,]/g, '');
                 let parts = val.split(',');
                 
@@ -905,7 +1095,7 @@
                     intPart = parseInt(intPart, 10).toString();
                     intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                 } else if (parts.length === 2) {
-                    intPart = "0"; 
+                    intPart = "0";
                 }
                 
                 if (parts.length === 2) {
@@ -916,7 +1106,7 @@
             }
         });
 
-        // INICIALIZAÇÃO
+        // Inicialização
         document.addEventListener("DOMContentLoaded", () => {
             renderDashboard();
         });
