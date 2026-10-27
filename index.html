@@ -35,7 +35,7 @@
 
         #app {
             width: 100%;
-            max-width: 600px; /* Mobile first, restringe tamanho no PC */
+            max-width: 600px;
             position: relative;
             background-color: var(--bg-color);
             min-height: 100vh;
@@ -55,6 +55,46 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: translateX(10px); }
             to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* HOME SCREEN */
+        #home-screen {
+            height: 100vh;
+            padding: 0;
+        }
+        
+        #home-screen.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .home-title {
+            position: absolute;
+            top: 3rem;
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: var(--text-main);
+            letter-spacing: 1px;
+        }
+
+        .home-btn {
+            background-color: var(--accent);
+            color: #0d0d0d;
+            border: none;
+            padding: 1rem 4rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+            box-shadow: 0 4px 15px rgba(187, 134, 252, 0.3);
+        }
+
+        .home-btn:hover {
+            background-color: #a46cf5;
+            transform: scale(1.05);
         }
 
         /* HEADER */
@@ -302,10 +342,16 @@
 <body>
 
     <div id="app">
+        <!-- TELA 0: INICIAL -->
+        <div id="home-screen" class="screen active">
+            <h1 class="home-title">Fine Tuning</h1>
+            <button class="home-btn" onclick="startApp()">Dieta</button>
+        </div>
+
         <!-- TELA 1: LISTA DE REFEIÇÕES -->
-        <div id="dashboard-screen" class="screen active">
+        <div id="dashboard-screen" class="screen">
             <div class="header">
-                <button class="icon-btn">&#10094;</button>
+                <button class="icon-btn" onclick="goHome()">&#10094;</button>
                 <h2>Registrar refeição</h2>
                 <button class="icon-btn">&#8942;</button>
             </div>
@@ -317,7 +363,7 @@
         <!-- TELA 2: DETALHES DA REFEIÇÃO -->
         <div id="details-screen" class="screen">
             <div class="header">
-                <button class="icon-btn" onclick="goBack()">&#10094;</button>
+                <button class="icon-btn" onclick="goBackToDashboard()">&#10094;</button>
                 <h2 id="detail-title">Detalhes</h2>
             </div>
             
@@ -396,6 +442,17 @@
             ]
         };
 
+        // Navegação
+        function startApp() {
+            document.getElementById("home-screen").classList.remove("active");
+            document.getElementById("dashboard-screen").classList.add("active");
+        }
+
+        function goHome() {
+            document.getElementById("dashboard-screen").classList.remove("active");
+            document.getElementById("home-screen").classList.add("active");
+        }
+
         // Funções Auxiliares de Cálculo
         function calculateMealTotals(foods) {
             return foods.reduce((acc, food) => {
@@ -417,7 +474,7 @@
             };
         }
 
-        // Renderização da Tela Principal
+        // Renderização da Tela de Dashboard
         function renderDashboard() {
             const container = document.getElementById("meals-container");
             container.innerHTML = "";
@@ -430,7 +487,6 @@
                 const card = document.createElement("div");
                 card.className = "meal-card";
                 
-                // Interação 1: Click no card abre detalhes
                 card.onclick = () => openMealDetails(meal.id);
 
                 card.innerHTML = `
@@ -453,10 +509,9 @@
                     <button class="add-btn">+</button>
                 `;
 
-                // Interação 2: Click no botão '+' abre modal
                 const addBtn = card.querySelector(".add-btn");
                 addBtn.onclick = (e) => {
-                    e.stopPropagation(); // Previne abertura da tela de detalhes
+                    e.stopPropagation(); 
                     openActionModal(meal);
                 };
 
@@ -500,7 +555,7 @@
             document.getElementById("details-screen").classList.add("active");
         }
 
-        function goBack() {
+        function goBackToDashboard() {
             document.getElementById("details-screen").classList.remove("active");
             document.getElementById("dashboard-screen").classList.add("active");
         }
@@ -538,10 +593,3 @@
     </script>
 </body>
 </html>
-```<FollowUp>
-```json
-[
-  "Como você pretende implementar a sincronização em tempo real entre o Firestore e os arrays de objetos JS (mocks) quando prosseguirmos com a integração de backend?",
-  "Existe algum requisito específico de validação de dados que o Firestore demandará na edição de alimentos, além do armazenamento simples de macronutrientes?",
-  "O gráfico de macronutrientes no topo da tela de Dashboard, presente na primeira imagem, também precisará de integração via Firestore futuramente?"
-]
