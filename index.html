@@ -33,12 +33,15 @@
   .erro { background: #3b1111; color: #ff8a8a; border-radius: 10px; padding: .8rem 1rem; margin-bottom: 1rem; font-size: .85rem; }
   .vazio { color: var(--text-sec); text-align: center; margin-top: 2rem; }
   .sub { font-size: 1rem; font-weight: 500; margin-bottom: 1rem; }
-  .preview { font-size: .8rem; color: var(--text-sec); margin-top: .5rem; }
+  .preview { font-size: .85rem; color: var(--text-sec); margin-top: .5rem; text-align: center; }
 
   /* Controle de Data e Menu */
   .date-selector { display: flex; align-items: center; justify-content: center; gap: 0.2rem; }
   .date-text { font-size: 1.1rem; font-weight: 600; color: var(--accent); min-width: 80px; text-align: center; }
-  .dropdown-menu { position: absolute; right: 0; top: 3rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.5); min-width: 180px; }
+  
+  /* Dropdown Menu Corrigido */
+  .dropdown-menu { position: absolute; right: 0; top: 3rem; background: #2c2c2e; border: 1px solid var(--border-color); border-radius: 12px; display: none; flex-direction: column; overflow: hidden; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.5); min-width: 180px; }
+  .dropdown-menu.show { display: flex; }
   .dropdown-menu button { background: none; border: none; color: var(--text-main); padding: 1rem; text-align: left; font-size: 0.95rem; cursor: pointer; border-bottom: 1px solid var(--border-color); }
   .dropdown-menu button:last-child { border-bottom: none; }
   .dropdown-menu button:hover { background: rgba(255,255,255,0.05); }
@@ -74,7 +77,7 @@
   .food-name { font-weight: 500; font-size: .95rem; }
   .food-macros { font-size: .75rem; color: var(--text-sec); margin-top: .3rem; }
 
-  /* Formulários */
+  /* Formulários e Inputs */
   .form-section { background: var(--card-bg); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
   .form-section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1.2rem; color: var(--accent); border-bottom: 1px solid var(--border-color); padding-bottom: .5rem; }
   .form-group { margin-bottom: 1.2rem; }
@@ -85,6 +88,17 @@
   .unit-select { font-size: .9rem; cursor: pointer; }
   .input-control:focus, .unit-select:focus { border-color: var(--accent); }
   .fixed-unit { display: flex; align-items: center; justify-content: center; background: var(--icon-bg); padding: 0 1rem; border-radius: 8px; color: var(--text-sec); font-size: .9rem; min-width: 60px; }
+  
+  /* Custom Range Slider (Proporção) */
+  .slider-wrapper { position: relative; margin: 3rem 0 1rem; padding: 0 5px; }
+  .slider-tooltip { position: absolute; top: -38px; left: 50%; transform: translateX(-50%); background: #444; color: #fff; padding: 5px 12px; border-radius: 6px; font-size: 1rem; font-weight: bold; pointer-events: none; transition: left 0.1s ease; }
+  .slider-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border-width: 6px; border-style: solid; border-color: #444 transparent transparent transparent; }
+  .custom-slider { -webkit-appearance: none; width: 100%; background: transparent; outline: none; margin: 0; }
+  .custom-slider::-webkit-slider-runnable-track { width: 100%; height: 2px; background: #555; border-radius: 2px; }
+  .custom-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #fff; cursor: pointer; margin-top: -8px; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+  .slider-labels { display: flex; justify-content: space-between; color: var(--text-sec); font-size: 0.8rem; margin-top: 12px; padding: 0 5px; }
+  .total-display { text-align: center; color: var(--accent); font-weight: 600; font-size: 1.2rem; margin: 1rem 0; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+  
   .save-btn { width: 100%; padding: 1.2rem; background: var(--accent); color: #000; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 1rem; }
   .save-btn:hover { background: #a46cf5; }
 
@@ -120,7 +134,7 @@
 
       <div style="position:relative; display:flex; justify-content:flex-end; flex:1;">
         <button class="icon-btn" id="menu-btn" style="font-size: 1.8rem; transform: translateY(-5px);">&#8942;</button>
-        <div id="meal-menu" class="dropdown-menu" hidden>
+        <div id="meal-menu" class="dropdown-menu">
           <button id="btn-add-meal">Adicionar refeição</button>
           <button id="btn-toggle-delete">Excluir refeição</button>
         </div>
@@ -155,17 +169,29 @@
     <form id="item-form">
       <div class="form-section">
         <div class="form-group">
-          <label>Alimento</label>
+          <label>Alimento (Porção base)</label>
           <select id="item-select" class="input-control" required></select>
         </div>
+        
         <div class="form-group">
-          <label>Quantidade</label>
-          <div class="input-group">
-            <input id="item-qtd" class="input-control decimal-input" placeholder="0,000" inputmode="decimal" required>
-            <div id="item-unidade" class="fixed-unit">g</div>
+          <label style="text-align: center; margin-top: 1rem;">Proporção (Quantidade)</label>
+          <div class="slider-wrapper">
+            <div class="slider-tooltip" id="slider-tooltip">1.0</div>
+            <!-- Slider configurado de 0.1 até 3.0 para precisão -->
+            <input type="range" id="item-qtd" class="custom-slider" min="0.1" max="3.0" step="0.1" value="1.0" required>
+            <div class="slider-labels">
+              <span>0,1</span>
+              <span>1,0</span>
+              <span>2,0</span>
+              <span>3,0</span>
+            </div>
           </div>
+          
+          <div class="total-display">
+            Equivale a: <span id="item-total-qty">0</span> <span id="item-unidade">g</span>
+          </div>
+          <p id="item-preview" class="preview"></p>
         </div>
-        <p id="item-preview" class="preview"></p>
       </div>
       <button type="submit" class="save-btn">Adicionar à refeição</button>
     </form>
@@ -228,7 +254,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
   import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-  // Configuração do projeto Firebase (CONTROLE-ALIMENTAR)
+  // Configuração do projeto Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyBLTPfj097saA-VrtxqWCLWDdS5acjgbEs",
     authDomain: "os-coretiva-preventiva.firebaseapp.com",
@@ -269,10 +295,6 @@
   const escapar = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const parseInputPTBR = s => { const v = parseFloat(String(s || "").replace(/\./g, "").replace(",", ".")); return isNaN(v) ? 0 : v; };
   const somar = itens => itens.reduce((a, i) => ({ kcal: a.kcal + i.kcal, carb: a.carb + i.carb, fat: a.fat + i.fat, prot: a.prot + i.prot }), { kcal: 0, carb: 0, fat: 0, prot: 0 });
-  const calcularItem = (a, qtd) => {
-    const f = qtd / a.porcao;
-    return { kcal: a.kcal * f, carb: a.nutrientes.carb * f, fat: a.nutrientes.fat * f, prot: a.nutrientes.prot * f };
-  };
   const percentuais = t => {
     const total = t.carb + t.fat + t.prot;
     if (!total) return { carb: 0, fat: 0, prot: 0 };
@@ -318,7 +340,7 @@
   function mostrarErro(err) {
     console.error(err);
     const box = $("#erro");
-    box.textContent = `Erro do Firestore: ${err.code || err.message}. Confira se o banco foi criado e se as regras permitem leitura e escrita.`;
+    box.textContent = `Erro: ${err.code || err.message}`;
     box.hidden = false;
   }
 
@@ -383,7 +405,6 @@
 
     $("#meals-container").innerHTML = estado.refeicoes.map(r => {
       const todosItens = estado.itens[r.id] || [];
-      // Filtra os itens pela data atual. Itens antigos sem data aparecem no "Hoje"
       const itens = todosItens.filter(i => {
         if(i.dataRef) return i.dataRef === strDataAtual;
         return strDataAtual === strDataHoje; 
@@ -464,41 +485,92 @@
     $("#action-modal").classList.add("active");
   }
 
+  // UI Lógica do Novo Slider
+  const slider = $("#item-qtd");
+  const tooltip = $("#slider-tooltip");
+
+  function atualizarPosicaoSlider() {
+    const min = parseFloat(slider.min);
+    const max = parseFloat(slider.max);
+    const val = parseFloat(slider.value);
+    
+    // Atualiza o texto do tooltip
+    tooltip.textContent = val.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    
+    // Calcula posição ajustada da bolinha (evita passar das bordas)
+    const percent = ((val - min) / (max - min)) * 100;
+    const offset = 9 - (percent * 0.18); // Ajuste fino pra bolinha alinhar com o ponteiro do tooltip
+    tooltip.style.left = `calc(${percent}% + ${offset}px)`;
+  }
+
+  function atualizarResumo() {
+    atualizarPosicaoSlider();
+    const a = alimentoSelecionado();
+    
+    if (!a || !(a.porcao > 0)) {
+      $("#item-preview").textContent = "";
+      $("#item-total-qty").textContent = "0";
+      $("#item-unidade").textContent = "g";
+      return;
+    }
+    
+    const multiplicador = parseFloat(slider.value) || 1.0;
+    const quantidadeReal = a.porcao * multiplicador;
+    
+    $("#item-unidade").textContent = a.unidade;
+    $("#item-total-qty").textContent = fmt(quantidadeReal);
+
+    // Calcula macros proporcionais
+    const c = {
+      kcal: a.kcal * multiplicador,
+      carb: a.nutrientes.carb * multiplicador,
+      fat: a.nutrientes.fat * multiplicador,
+      prot: a.nutrientes.prot * multiplicador
+    };
+    
+    $("#item-preview").textContent = `Proporcional: ${fmt(c.kcal)} kcal • C: ${fmt(c.carb)}g | G: ${fmt(c.fat)}g | P: ${fmt(c.prot)}g`;
+  }
+
   // Adicionar alimento já cadastrado a uma refeição
   function abrirAdicionarItem() {
     const r = estado.refeicoes.find(r => r.id === refeicaoAtual);
     $("#item-title").textContent = `Adicionar em ${r ? r.titulo : ""}`;
     $("#item-select").innerHTML = estado.alimentos.length
-      ? estado.alimentos.map(a => `<option value="${a.id}">${escapar(a.nome)} (${fmt(a.porcao)} ${a.unidade})</option>`).join("")
+      ? estado.alimentos.map(a => `<option value="${a.id}">${escapar(a.nome)} (Porção: ${fmt(a.porcao)} ${a.unidade})</option>`).join("")
       : `<option value="">Cadastre um alimento primeiro</option>`;
+    
     $("#item-form").reset();
+    slider.value = 1.0; // Restaura o slider para o meio por padrão
     atualizarResumo();
     ir("item");
-  }
-
-  function atualizarResumo() {
-    const a = alimentoSelecionado();
-    $("#item-unidade").textContent = a ? a.unidade : "g";
-    const qtd = parseInputPTBR($("#item-qtd").value);
-    if (!a || !(a.porcao > 0) || !(qtd > 0)) {
-      $("#item-preview").textContent = "";
-      return;
-    }
-    const c = calcularItem(a, qtd);
-    $("#item-preview").textContent = `${fmt(c.kcal)} kcal • C: ${fmt(c.carb)}g | G: ${fmt(c.fat)}g | P: ${fmt(c.prot)}g`;
   }
 
   async function salvarItem(e) {
     e.preventDefault();
     const a = alimentoSelecionado();
-    const qtd = parseInputPTBR($("#item-qtd").value);
-    if (!a || !(a.porcao > 0) || !(qtd > 0)) return alert("Escolha um alimento e informe a quantidade.");
-    const c = calcularItem(a, qtd);
+    const multiplicador = parseFloat(slider.value);
+    
+    if (!a || multiplicador <= 0) return alert("Escolha um alimento e a proporção.");
+    
+    const quantidadeReal = a.porcao * multiplicador;
+    
+    const c = {
+      kcal: a.kcal * multiplicador,
+      carb: a.nutrientes.carb * multiplicador,
+      fat: a.nutrientes.fat * multiplicador,
+      prot: a.nutrientes.prot * multiplicador
+    };
+
     try {
       await addDoc(collection(db, "dieta_refeicoes", refeicaoAtual, "itens"), {
-        nome: a.nome, alimentoId: a.id, quantidade: qtd, unidade: a.unidade,
+        nome: a.nome, 
+        alimentoId: a.id, 
+        quantidade: quantidadeReal, 
+        multiplicador: multiplicador, // Opcional, guarda a escala usada
+        unidade: a.unidade,
         kcal: c.kcal, carb: c.carb, fat: c.fat, prot: c.prot, 
-        criadoEm: Date.now(), dataRef: obterDataString(dataAtual) // Salva atrelado ao dia atual
+        criadoEm: Date.now(), 
+        dataRef: obterDataString(dataAtual)
       });
       abrirDetalhes(refeicaoAtual);
     } catch (err) {
@@ -551,27 +623,32 @@
       ? (partes.length === 2 ? "0" : "")
       : parseInt(partes[0], 10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     el.value = partes.length === 2 ? `${inteira},${partes[1]}` : inteira;
-    if (el.id === "item-qtd") atualizarResumo();
   }
 
-  // Eventos de clique na tela
+  // Controle do Menu Dropdown
   document.addEventListener("click", e => {
-    // Menu Dropdown da Data
+    // Esconde o menu se clicar fora dele ou fora do botão
     if (!e.target.closest("#menu-btn") && !e.target.closest("#meal-menu")) {
-      $("#meal-menu").hidden = true;
+      $("#meal-menu").classList.remove("show");
     }
-
+    
+    // Navegação genérica
     const btn = e.target.closest("[data-go]");
     if (btn) ir(btn.dataset.go);
   });
 
+  $("#menu-btn").addEventListener("click", (e) => {
+    e.stopPropagation(); // Evita que o evento borbulhe e caia no listener do document acima
+    $("#meal-menu").classList.toggle("show");
+  });
+
+  // Outros Listeners
   $("#prev-date").addEventListener("click", () => mudarData(-1));
   $("#next-date").addEventListener("click", () => mudarData(1));
-  $("#menu-btn").addEventListener("click", () => $("#meal-menu").hidden = !$("#meal-menu").hidden);
   
-  $("#btn-add-meal").addEventListener("click", () => { $("#meal-menu").hidden = true; adicionarRefeicao(); });
+  $("#btn-add-meal").addEventListener("click", () => { $("#meal-menu").classList.remove("show"); adicionarRefeicao(); });
   $("#btn-toggle-delete").addEventListener("click", () => {
-    $("#meal-menu").hidden = true;
+    $("#meal-menu").classList.remove("show");
     deleteMode = !deleteMode;
     renderDashboard();
   });
@@ -590,7 +667,11 @@
   $("#action-modal").addEventListener("click", e => { if (e.target.id === "action-modal") fecharModal(); });
   $("#btn-add-item").addEventListener("click", () => { fecharModal(); abrirAdicionarItem(); });
   $("#btn-new-food").addEventListener("click", () => { fecharModal(); abrirCadastro(); });
+  
+  // Listeners do form de proporção (Slider)
   $("#item-select").addEventListener("change", atualizarResumo);
+  slider.addEventListener("input", atualizarResumo);
+  
   $("#item-form").addEventListener("submit", salvarItem);
   $("#food-form").addEventListener("submit", salvarAlimento);
   document.addEventListener("input", mascaraDecimal);
@@ -624,7 +705,6 @@
   // Inicializa lista dinâmica de refeições
   onSnapshot(collection(db, "dieta_refeicoes_tipos"), snap => {
     if (snap.empty) {
-      // Se não houver configurações, grava os padrões
       DEFAULT_REFEICOES.forEach(m => setDoc(doc(db, "dieta_refeicoes_tipos", m.id), m));
     } else {
       estado.refeicoes = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => a.ordem - b.ordem);
@@ -633,6 +713,8 @@
     }
   }, mostrarErro);
 
+  // Define layout inicial do slider
+  atualizarPosicaoSlider();
 </script>
 </body>
 </html>
