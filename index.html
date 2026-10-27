@@ -46,7 +46,7 @@
             display: none;
             padding: 1.5rem;
             animation: fadeIn 0.3s ease;
-            padding-bottom: 3rem; /* Espaço para rolagem extra */
+            padding-bottom: 3rem;
         }
 
         .screen.active {
@@ -785,7 +785,24 @@
     </div>
 
     <script>
-        // 1. ESTRUTURA DE DADOS MOCK (Simulando Firestore)
+        // Formatação PT-BR de números - Mantendo a precisão, sem arredondar de forma arbitrária.
+        function formatNumberPTBR(num) {
+            if (num === undefined || num === null || isNaN(num)) return "0";
+            return new Intl.NumberFormat('pt-BR', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 3 // Respeita a precisão máxima de 3 casas decimais
+            }).format(num);
+        }
+
+        // Função para converter strings PT-BR capturadas de inputs de volta para Float nativo (se necessário p/ backend)
+        function parseInputPTBR(str) {
+            if (!str) return 0;
+            const cleanStr = str.replace(/\./g, '').replace(',', '.');
+            const val = parseFloat(cleanStr);
+            return isNaN(val) ? 0 : val;
+        }
+
+        // 1. ESTRUTURA DE DADOS MOCK (Simulando Firestore com valores fracionados para teste de precisão)
         const firestoreMock = {
             meals: [
                 {
@@ -793,7 +810,7 @@
                     title: "Café da manhã",
                     icon: "🌅",
                     foods: [
-                        { name: "Ovo Mexido", amount: "100g", kcal: 398, carb: 4, fat: 70, prot: 26 }
+                        { name: "Ovo Mexido", amount: "100g", kcal: 398.5, carb: 4.2, fat: 70.4, prot: 26 }
                     ]
                 },
                 {
@@ -801,10 +818,10 @@
                     title: "Almoço",
                     icon: "☀️",
                     foods: [
-                        { name: "Albumina (Naturovos)", amount: "2 scoops", kcal: 110, carb: 2, fat: 0, prot: 24 },
+                        { name: "Albumina (Naturovos)", amount: "2 scoops", kcal: 110, carb: 2.45, fat: 0.4, prot: 24.8 },
                         { name: "Creatina", amount: "5g", kcal: 0, carb: 0, fat: 0, prot: 0 },
                         { name: "Suco de Pêssego", amount: "200ml", kcal: 80, carb: 20, fat: 0, prot: 0 },
-                        { name: "Coxinha de Frango", amount: "1 unidade", kcal: 901, carb: 48, fat: 29, prot: 23 }
+                        { name: "Coxinha de Frango", amount: "1 unidade", kcal: 901.125, carb: 48, fat: 29.5, prot: 23 }
                     ]
                 },
                 {
@@ -836,7 +853,7 @@
             document.getElementById("home-screen").classList.add("active");
         }
 
-        // Funções Auxiliares de Cálculo
+        // Funções Auxiliares de Cálculo sem arredondamento matemático
         function calculateMealTotals(foods) {
             return foods.reduce((acc, food) => {
                 acc.kcal += food.kcal;
@@ -847,13 +864,14 @@
             }, { kcal: 0, carb: 0, fat: 0, prot: 0 });
         }
 
+        // Removido Math.round() para desativar arredondamentos e exibir valor original digitado/calculado
         function calculatePercentages(totals) {
             const totalMacros = totals.carb + totals.fat + totals.prot;
             if (totalMacros === 0) return { carb: 0, fat: 0, prot: 0 };
             return {
-                carb: Math.round((totals.carb / totalMacros) * 100),
-                fat: Math.round((totals.fat / totalMacros) * 100),
-                prot: Math.round((totals.prot / totalMacros) * 100)
+                carb: (totals.carb / totalMacros) * 100,
+                fat: (totals.fat / totalMacros) * 100,
+                prot: (totals.prot / totalMacros) * 100
             };
         }
 
@@ -877,16 +895,16 @@
                     <div class="meal-content">
                         <div class="meal-title">${meal.title}</div>
                         <div class="meal-desc">${foodNames || "Nenhum alimento registrado"}</div>
-                        <div class="meal-kcal">🔥 ${totals.kcal.toLocaleString('pt-BR')} kcal</div>
+                        <div class="meal-kcal">🔥 ${formatNumberPTBR(totals.kcal)} kcal</div>
                         <div class="macros-bar">
                             <div style="width: ${percents.carb}%; background-color: var(--carb-color);"></div>
                             <div style="width: ${percents.fat}%; background-color: var(--fat-color);"></div>
                             <div style="width: ${percents.prot}%; background-color: var(--prot-color);"></div>
                         </div>
                         <div class="macros-text">
-                            <span class="dot dot-carb">${percents.carb}%</span>
-                            <span class="dot dot-fat">${percents.fat}%</span>
-                            <span class="dot dot-prot">${percents.prot}%</span>
+                            <span class="dot dot-carb">${formatNumberPTBR(percents.carb)}%</span>
+                            <span class="dot dot-fat">${formatNumberPTBR(percents.fat)}%</span>
+                            <span class="dot dot-prot">${formatNumberPTBR(percents.prot)}%</span>
                         </div>
                     </div>
                     <button class="add-btn">+</button>
@@ -910,10 +928,10 @@
             const totals = calculateMealTotals(meal.foods);
             
             document.getElementById("detail-title").textContent = meal.title;
-            document.getElementById("detail-kcal").textContent = `${totals.kcal.toLocaleString('pt-BR')} kcal`;
-            document.getElementById("detail-carb").textContent = `${totals.carb}g`;
-            document.getElementById("detail-fat").textContent = `${totals.fat}g`;
-            document.getElementById("detail-prot").textContent = `${totals.prot}g`;
+            document.getElementById("detail-kcal").textContent = `${formatNumberPTBR(totals.kcal)} kcal`;
+            document.getElementById("detail-carb").textContent = `${formatNumberPTBR(totals.carb)}g`;
+            document.getElementById("detail-fat").textContent = `${formatNumberPTBR(totals.fat)}g`;
+            document.getElementById("detail-prot").textContent = `${formatNumberPTBR(totals.prot)}g`;
 
             const foodsContainer = document.getElementById("foods-container");
             foodsContainer.innerHTML = "";
@@ -926,9 +944,9 @@
                         <div class="food-list-item">
                             <div>
                                 <div class="food-name">${food.name}</div>
-                                <div class="food-macros">${food.amount} • C: ${food.carb}g | G: ${food.fat}g | P: ${food.prot}g</div>
+                                <div class="food-macros">${food.amount} • C: ${formatNumberPTBR(food.carb)}g | G: ${formatNumberPTBR(food.fat)}g | P: ${formatNumberPTBR(food.prot)}g</div>
                             </div>
-                            <div style="font-weight: 500;">${food.kcal} kcal</div>
+                            <div style="font-weight: 500;">${formatNumberPTBR(food.kcal)} kcal</div>
                         </div>
                     `;
                 });
@@ -972,12 +990,8 @@
         }
 
         function goBackFromAddFood() {
-            // Reseta o form
             document.getElementById("add-food-form").reset();
-            
-            // Esconde todas as caixas de referência de vitaminas abertas
             document.querySelectorAll(".ref-group").forEach(el => el.style.display = "none");
-
             document.getElementById("add-food-screen").classList.remove("active");
             document.getElementById("dashboard-screen").classList.add("active");
         }
@@ -989,28 +1003,46 @@
                 refGroup.style.display = 'block';
             } else {
                 refGroup.style.display = 'none';
-                refGroup.querySelector("input").value = ""; // limpa valor ao esconder
+                refGroup.querySelector("input").value = ""; 
             }
         }
 
-        // Formatação de casas decimais (0,000)
+        // Máscara rígida de Formatação Numérica (Padrão PT-BR: "1.000,000")
         document.addEventListener("input", function(e) {
             if (e.target.classList.contains("decimal-input")) {
                 let val = e.target.value;
-                // Remove qualquer coisa que não seja número ou vírgula
+                
+                // Remove tudo que não for dígito numérico ou vírgula
                 val = val.replace(/[^0-9,]/g, '');
                 
                 let parts = val.split(',');
-                // Previne mais de uma vírgula
+                
+                // Previne inserção de múltiplas vírgulas
                 if (parts.length > 2) {
                     val = parts[0] + ',' + parts.slice(1).join('');
-                }
-                // Limita a 3 casas decimais
-                if (parts.length === 2 && parts[1].length > 3) {
-                    val = parts[0] + ',' + parts[1].substring(0, 3);
+                    parts = val.split(',');
                 }
                 
-                e.target.value = val;
+                // Limita estritamente a 3 casas decimais
+                if (parts.length === 2 && parts[1].length > 3) {
+                    parts[1] = parts[1].substring(0, 3);
+                }
+                
+                // Processa a parte inteira para adicionar pontos de milhar
+                let intPart = parts[0];
+                if (intPart !== "") {
+                    intPart = parseInt(intPart, 10).toString(); // Remove zeros indesejados à esquerda
+                    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                } else if (parts.length === 2) {
+                    intPart = "0"; // Permite que usuário digite ",5" e converta automaticamente para "0,5"
+                }
+                
+                // Remonta o valor final no input
+                if (parts.length === 2) {
+                    e.target.value = intPart + ',' + parts[1];
+                } else {
+                    e.target.value = intPart;
+                }
             }
         });
 
@@ -1021,3 +1053,4 @@
     </script>
 </body>
 </html>
+```<FollowUp label="Quer integrar um leitor de código de barras para puxar esses dados automaticamente no futuro?" query="Como posso implementar um leitor de código de barras usando a câmera do celular com JavaScript para pré-preencher este formulário?"/>
